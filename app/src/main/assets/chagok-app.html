@@ -518,14 +518,17 @@ $('cards').addEventListener('click', (e) => {
 $('useRest').addEventListener('change', (e) => { ui.rest = e.target.checked; });
 
 // ── F8 내비 전달 ──
-// 휴게소 후보: 더 돌아가는 거리(도로 기준 추정)가 짧은 순으로 3곳. 출발할 때 사용자가 고른다
+// 휴게소 후보: 가는 경로 위(출발지와 목적지 사이, 더 돌아가는 거리 8km 이하)에 있는 곳만, 짧은 순으로 최대 3곳
+const REST_MAX_DETOUR = 8;
 function restCandidates(p) {
-  const direct = haversine(live.origin, p);
-  return REST_AREAS.map((r) => ({ r, detour: (haversine(live.origin, r) + haversine(r, p) - direct) * ROAD }))
+  const o = live.origin, direct = haversine(o, p);
+  return REST_AREAS.map((r) => ({ r, from: haversine(o, r), to: haversine(r, p), detour: (haversine(o, r) + haversine(r, p) - direct) * ROAD }))
+    .filter((x) => x.from > 3 && x.to < direct && x.detour <= REST_MAX_DETOUR)
     .sort((a, b) => a.detour - b.detour).slice(0, 3);
 }
 function pickRest(p) {
   const list = restCandidates(p);
+  if (!list.length) { toast('가는 길에 들를 휴게소가 없어 바로 출발해요'); return depart(p, null); }
   $('pickerTitle').textContent = `${p.name} 가는 길에 들를 휴게소`;
   $('pickerList').innerHTML = list.map((x, i) => `<button data-rest="${i}">${x.r.name}<span class="muted">${x.detour < 1 ? '거의 그대로' : `+${km(x.detour)} 더`}</span></button>`).join('')
     + '<button class="ghost" data-rest="none">휴게소 없이 출발</button>';
