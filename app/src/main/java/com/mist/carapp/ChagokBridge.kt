@@ -13,6 +13,8 @@ import ai.pleos.playground.navi.data.RouteInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
 import ai.pleos.playground.navi.data.RouteStateInfo
 import ai.pleos.playground.navi.data.RouteWithWaypointsRequest
+import ai.pleos.playground.navi.data.TripInfo
+import ai.pleos.playground.navi.data.TripRequest
 import ai.pleos.playground.navi.data.WaypointArrivedInfo
 import ai.pleos.playground.navi.data.WaypointChangedInfo
 import ai.pleos.playground.navi.data.WaypointInfo
@@ -26,8 +28,6 @@ import ai.pleos.playground.vehicle.constant.area.SeatValue
 import android.car.Car
 import android.car.drivingstate.CarUxRestrictionsManager
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.webkit.JavascriptInterface
 import kotlinx.serialization.KSerializer
@@ -53,10 +53,7 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
     private val seats = listOf(SeatValue.ROW_1_LEFT, SeatValue.ROW_1_RIGHT, SeatValue.ROW_2_LEFT, SeatValue.ROW_2_RIGHT)
 
     private val naviListener = object : NaviHelperEventListener {
-        override fun onRouteStarted(info: RouteStartInfo) {
-            naviEvent("routeStarted", RouteStartInfo.serializer(), info)
-            main.post { onProbeStarted(info) }
-        }
+        override fun onRouteStarted(info: RouteStartInfo) = naviEvent("routeStarted", RouteStartInfo.serializer(), info)
         override fun onRouteEnded() = naviEvent("routeEnded")
         override fun onRoutingCompleted() = naviEvent("routingCompleted")
         override fun onReRouteEnded() = naviEvent("reRouteEnded")
@@ -75,6 +72,7 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
         override fun onCurrentRoadSpeedLimit(limit: Int) = naviEvent("speedLimit", limit)
         override fun onDrivingInfo(info: DrivingInfo) = naviEvent("drivingInfo", DrivingInfo.serializer(), info)
         override fun onNavigationStatus(status: NavigationStatus) = naviEvent("status", status.name)
+        override fun onTripInfo(info: TripInfo) = naviEvent("tripInfo", TripInfo.serializer(), info)
     }
 
     init {
@@ -149,6 +147,13 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
             navi.requestRouteWithWaypoints(RouteWithWaypointsRequest(routeInfo(lat, lng, name, option), list))
         }
 
+    /** 안내 없이 경로 미리보기: 결과는 onTripInfo(거리·도착 예정·도착 시 SOC·에너지 소비) */
+    @JavascriptInterface
+    fun requestTrip(lat: Double, lng: Double, name: String) = naviCall("requestTrip") {
+        // (위도, 경도, poiId, poiName, poiSubId)
+        navi.requestTrip(TripRequest(lat, lng, "", name, ""))
+    }
+
     @JavascriptInterface
     fun changeRouteOption(option: String) = naviCall("changeRouteOption") { navi.changeRouteOption(RouteOption.valueOf(option)) }
 
@@ -167,54 +172,7 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
         navi.getWaypointInfo()
     }
 
-    // ── 경로 확인: 카드 목적지마다 경로 요청 → onRouteStarted의 도로 거리·시간·통행료 → 안내 취소 → 다음 ──
-    // 내비가 앞에 있는 동안 WebView 타이머가 멈추므로 순서 제어는 여기(메인 스레드)서 한다
-    private val main = Handler(Looper.getMainLooper())
-    private val probeQueue = ArrayDeque<JSONObject>()
-    private var probing: JSONObject? = null
-    private val probeTimeout = Runnable {
-        emit(JSONObject().put("type", "navi").put("event", "probeFailed").put("data", probing?.optString("name")))
-        runCatching { navi.cancelRoute() }
-        probing = null
-        main.postDelayed(::nextProbe, PROBE_GAP_MS)
-    }
-
-    /** places: [{lat, lng, name}] JSON 문자열. 결과는 navi 이벤트 probeRoute {name, route} / probeFailed / probeDone */
-    @JavascriptInterface
-    fun probeRoutes(places: String) {
-        val arr = JSONArray(places)
-        main.post {
-            for (i in 0 until arr.length()) probeQueue.addLast(arr.getJSONObject(i))
-            if (probing == null) nextProbe()
-        }
-    }
-
-    private fun nextProbe() {
-        val next = probeQueue.removeFirstOrNull()
-        if (next == null) {
-            naviEvent("probeDone")
-            return
-        }
-        probing = next
-        naviCall("probeRoute") { navi.requestRoute(routeInfo(next.getDouble("lat"), next.getDouble("lng"), next.getString("name"), "RECOMMENDED")) }
-        main.postDelayed(probeTimeout, PROBE_TIMEOUT_MS)
-    }
-
-    private fun onProbeStarted(info: RouteStartInfo) {
-        val p = probing ?: return
-        main.removeCallbacks(probeTimeout)
-        emit(JSONObject().put("type", "navi").put("event", "probeRoute")
-            .put("data", JSONObject().put("name", p.getString("name")).put("route", JSONObject(json.encodeToString(RouteStartInfo.serializer(), info)))))
-        probing = null
-        // 안내가 막 시작된 직후의 취소는 내비가 무시한다 → 잠시 뒤 취소하고 다음 요청
-        main.postDelayed({
-            runCatching { navi.cancelRoute() }
-            main.postDelayed(::nextProbe, PROBE_GAP_MS)
-        }, CANCEL_DELAY_MS)
-    }
-
     fun release() {
-        main.removeCallbacksAndMessages(null)
         runCatching { navi.removeListener(naviListener); navi.release() }
         runCatching { uxr?.unregisterListener(); car?.disconnect() }
         vehicle.release()
@@ -254,8 +212,5 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
 
     private companion object {
         const val TAG = "ChagokBridge"
-        const val PROBE_TIMEOUT_MS = 20_000L
-        const val PROBE_GAP_MS = 800L
-        const val CANCEL_DELAY_MS = 2_000L
     }
 }
