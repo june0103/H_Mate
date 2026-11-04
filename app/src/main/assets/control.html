@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>차량 제어</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0f1a;color:#fff;font-family:system-ui,"Noto Sans KR",sans-serif;user-select:none}
+  main{max-width:980px;margin:0 auto;padding:28px 32px}
+  header{display:flex;align-items:center;gap:20px}
+  header a{padding:8px 16px;border-radius:999px;background:#18203a;color:#fff;text-decoration:none;font-size:15px}
+  h1{margin:0;font-size:30px}
+  #status{margin-left:auto;font-size:14px;opacity:.6}
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+  section{padding:22px 24px;border-radius:24px;background:#18203a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  h2{margin:0 0 14px;font-size:20px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid rgba(255,255,255,.07)}
+  .row:first-of-type{border-top:0}
+  .row > span{font-size:17px}
+  .row .val{min-width:76px;text-align:center;font-size:22px;font-variant-numeric:tabular-nums}
+  .row .err{color:#ff8a8a;font-size:12px;display:block;margin-top:2px}
+  button{font:inherit;color:#fff;border:0;cursor:pointer}
+  .toggle{width:96px;padding:10px 0;border-radius:999px;background:#2a3355;font-size:16px}
+  .toggle[aria-pressed="true"]{background:#3ddc84;color:#06240f;font-weight:600}
+  .step{display:flex;align-items:center;gap:8px}
+  .step button{width:48px;height:48px;border-radius:14px;background:#2a3355;font-size:24px}
+  .step button:active,.toggle:active,.sw:active{transform:scale(.96)}
+  .swatches{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .sw{width:40px;height:40px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+  .sw[aria-pressed="true"]{box-shadow:0 0 0 3px #fff}
+  #ambientNow{display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:-3px;margin-left:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+  input[type=range]{width:220px}
+  .windows{grid-column:1 / -1}
+  .wins{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .win{display:grid;gap:10px;padding:14px;border-radius:16px;background:#111628;text-align:center}
+  .win b{font-size:16px}
+  .win .pos{font-size:20px;font-variant-numeric:tabular-nums}
+  .win .bar{height:6px;border-radius:3px;background:#2a3355;overflow:hidden}
+  .win .bar i{display:block;height:100%;width:0;background:#00b7ff;transition:width .3s}
+  .win .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .win button{padding:10px 0;border-radius:12px;background:#2a3355;font-size:15px}
+  .win button:active{transform:scale(.96)}
+  #log{margin:22px 0 0;padding:14px 18px;border-radius:16px;background:#111628;font:13px/1.6 ui-monospace,monospace;color:#9fb0d8;height:130px;overflow:auto;list-style:none}
+  #log .bad{color:#ff8a8a}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a href="index.html">← 메뉴</a>
+    <h1>차량 제어</h1>
+    <span id="status">연결 중…</span>
+  </header>
+
+  <div class="panels">
+    <section aria-label="공조">
+      <h2>공조</h2>
+      <div class="row"><span>전원</span><button class="toggle" data-key="hvacPower" aria-pressed="false">—</button></div>
+      <div class="row"><span>에어컨</span><button class="toggle" data-key="hvacAc" aria-pressed="false">—</button></div>
+      <div class="row"><span>온도 <small id="hvacTempRange"></small></span>
+        <div class="step"><button data-step="hvacTemp" data-d="-0.5">−</button><b class="val" id="hvacTemp">—</b><button data-step="hvacTemp" data-d="0.5">+</button></div></div>
+      <div class="row"><span>풍량 <small id="hvacFanRange"></small></span>
+        <div class="step"><button data-step="hvacFan" data-d="-1">−</button><b class="val" id="hvacFan">—</b><button data-step="hvacFan" data-d="1">+</button></div></div>
+    </section>
+
+    <section aria-label="앰비언트 조명">
+      <h2>앰비언트 조명 <i id="ambientNow"></i></h2>
+      <div class="row"><span>켜기</span><button class="toggle" data-key="ambientOn" aria-pressed="false">—</button></div>
+      <div class="row"><span>색상</span>
+        <div class="swatches" id="swatches"></div></div>
+      <div class="row"><span>밝기 <b id="ambientBrightness" class="val" style="font-size:17px;min-width:0">—</b></span>
+        <input type="range" id="brightness" min="0" max="100" step="1"></div>
+    </section>
+
+    <section class="windows" aria-label="창문">
+      <h2>창문</h2>
+      <div class="wins" id="wins"></div>
+    </section>
+  </div>
+
+  <ul id="log" aria-label="결과 기록"></ul>
+</main>
+<script>
+// Kotlin VehicleControl(window.carControl)을 부르고, 결과는 window.onCarControl(msg)로 받는다.
+const cc = window.carControl;
+const $ = (id) => document.getElementById(id);
+const COLORS = ['#ff2d2d', '#ff8a00', '#ffd400', '#2ee66b', '#00b7ff', '#3b5bff', '#b04dff', '#ffffff'];
+const WINDOWS = [['ROW_1_LEFT', '운전석'], ['ROW_1_RIGHT', '조수석'], ['ROW_2_LEFT', '뒷좌석 왼쪽'], ['ROW_2_RIGHT', '뒷좌석 오른쪽']];
+const LABEL = { hvacPower: '공조 전원', hvacAc: '에어컨', hvacTemp: '온도', hvacFan: '풍량', ambientOn: '앰비언트', ambientBrightness: '밝기', ambientColor: '색상' };
+for (const [w, name] of WINDOWS) LABEL[`window.${w}`] = `${name} 창문`;
+const state = {};
+const bounds = { hvacTemp: { min: 16, max: 30 }, hvacFan: { min: 0, max: 8 }, ambientBrightness: { min: 0, max: 100 } };
+// 창문 위치는 SDK 범위 그대로: 최솟값이 닫힘, 최댓값이 완전히 열림 (Android WINDOW_POS 관례)
+for (const [w] of WINDOWS) bounds[`window.${w}`] = { min: 0, max: 100 };
+$('wins').innerHTML = WINDOWS.map(([w, name]) => `<div class="win" id="win-${w}">
+  <b>${name}</b><span class="pos">—</span><div class="bar"><i></i></div>
+  <div class="btns"><button data-win="${w}" data-to="min">올리기</button><button data-win="${w}" data-to="max">내리기</button></div></div>`).join('');
+
+function log(text, bad = false) {
+  const li = document.createElement('li');
+  li.textContent = `${new Date().toLocaleTimeString('ko-KR', { hour12: false })}  ${text}`;
+  if (bad) li.className = 'bad';
+  $('log').prepend(li);
+  while ($('log').children.length > 40) $('log').lastChild.remove();
+}
+
+function show(key, v) {
+  state[key] = v;
+  const t = document.querySelector(`.toggle[data-key="${key}"]`);
+  if (t) { t.setAttribute('aria-pressed', String(!!v)); t.textContent = v == null ? '—' : v ? '켜짐' : '꺼짐'; return; }
+  if (key === 'hvacTemp') $('hvacTemp').textContent = v == null ? '—' : `${(+v).toFixed(1)}°`;
+  else if (key === 'hvacFan') $('hvacFan').textContent = v ?? '—';
+  else if (key === 'ambientBrightness') { $('ambientBrightness').textContent = v ?? '—'; if (v != null) $('brightness').value = v; }
+  else if (key.startsWith('window.')) {
+    const el = $(`win-${key.slice(7)}`), b = bounds[key];
+    if (!el) return;
+    const open = v == null ? 0 : (v - b.min) / Math.max(1, b.max - b.min);
+    el.querySelector('.pos').textContent = v == null ? '—' : open <= 0.001 ? '닫힘' : `${Math.round(open * 100)}% 열림`;
+    el.querySelector('.bar i').style.width = `${Math.round(open * 100)}%`;
+  }
+  else if (key === 'ambientColor') {
+    $('ambientNow').style.background = v || 'transparent';
+    for (const b of $('swatches').children) b.setAttribute('aria-pressed', String(b.dataset.color === v));
+  }
+}
+
+const lastShown = {};
+window.onCarControl = (m) => {
+  $('status').textContent = '차량 연결됨';
+  if (m.type === 'value') {
+    const changed = lastShown[m.key] !== JSON.stringify(m.value);
+    lastShown[m.key] = JSON.stringify(m.value);
+    show(m.key, m.value);
+    if (changed) log(`${LABEL[m.key] || m.key} = ${typeof m.value === 'boolean' ? (m.value ? '켜짐' : '꺼짐') : m.value}`);
+  } else if (m.type === 'caps') {
+    bounds[m.key] = { min: m.min, max: m.max };
+    const r = $(`${m.key}Range`);
+    if (r) r.textContent = `(${m.min}~${m.max})`;
+    if (m.key === 'ambientBrightness') { $('brightness').min = m.min; $('brightness').max = m.max; }
+  } else if (m.type === 'error') {
+    // 3초마다 다시 읽으니 같은 실패가 반복된다: 바뀔 때만 남긴다
+    if (lastShown[m.key] === `err:${m.message}`) return;
+    lastShown[m.key] = `err:${m.message}`;
+    log(`${LABEL[m.key] || m.key} 실패: ${m.message}`, true);
+  }
+};
+
+$('swatches').innerHTML = COLORS.map((c) => `<button class="sw" style="background:${c}" data-color="${c}" aria-label="${c}" aria-pressed="false"></button>`).join('');
+
+document.addEventListener('click', (e) => {
+  if (!cc) return;
+  const t = e.target.closest('.toggle');
+  if (t) {
+    const on = !state[t.dataset.key];
+    log(`${LABEL[t.dataset.key]} → ${on ? '켜기' : '끄기'} 요청`);
+    if (t.dataset.key === 'hvacPower') cc.setHvacPower(on);
+    else if (t.dataset.key === 'hvacAc') cc.setHvacAc(on);
+    else cc.setAmbientOn(on);
+    return;
+  }
+  const s = e.target.closest('[data-step]');
+  if (s) {
+    const key = s.dataset.step, b = bounds[key];
+    const next = Math.min(b.max, Math.max(b.min, (+state[key] || b.min) + +s.dataset.d));
+    log(`${LABEL[key]} → ${next} 요청`);
+    if (key === 'hvacTemp') cc.setHvacTemperature(next); else cc.setHvacFanSpeed(next);
+    return;
+  }
+  const wb = e.target.closest('[data-win]');
+  if (wb) {
+    const key = `window.${wb.dataset.win}`, to = bounds[key][wb.dataset.to];
+    log(`${LABEL[key]} → ${wb.dataset.to === 'min' ? '올리기' : '내리기'} (${to}) 요청`);
+    cc.setWindowPosition(wb.dataset.win, to);
+    return;
+  }
+  const sw = e.target.closest('.sw');
+  if (sw) { log(`색상 → ${sw.dataset.color} 요청`); cc.setAmbientColor(sw.dataset.color); }
+});
+$('brightness').addEventListener('change', (e) => {
+  log(`밝기 → ${e.target.value} 요청`);
+  cc?.setAmbientBrightness(+e.target.value);
+});
+
+if (!cc) {
+  $('status').textContent = '앱 밖에서는 제어할 수 없어요';
+} else {
+  cc.probe();
+  setInterval(() => cc.readAll(), 3000); // 콘솔·차량 쪽에서 바뀐 값도 따라가도록
+}
+</script>
+</body>
+</html>

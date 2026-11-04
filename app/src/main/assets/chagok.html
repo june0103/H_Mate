@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>차곡 데이터</title>
+<style>
+  html,body{margin:0;background:#0b0f1a;color:#fff;font-family:system-ui,"Noto Sans KR",sans-serif;user-select:none}
+  main{max-width:1240px;margin:0 auto;padding:24px 28px}
+  header{display:flex;align-items:center;gap:20px}
+  header a{padding:8px 16px;border-radius:999px;background:#18203a;color:#fff;text-decoration:none;font-size:15px}
+  h1{margin:0;font-size:28px}
+  #status{margin-left:auto;font-size:14px;opacity:.6}
+  .panels{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:20px}
+  section{padding:18px 20px;border-radius:22px;background:#18203a;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  section.wide{grid-column:span 2}
+  h2{margin:0 0 8px;font-size:18px}
+  h2 small{font-size:12px;font-weight:400;opacity:.55;margin-left:6px}
+  dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:0 12px}
+  dt,dd{padding:7px 0;border-top:1px solid rgba(255,255,255,.07);font-size:15px}
+  dt{opacity:.75}
+  dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+  dd.err{color:#ff8a8a;font-size:12px}
+  dd.mock{color:#ffd166}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}
+  .cell{padding:10px 6px;border-radius:12px;background:#111628;text-align:center;font-size:13px}
+  .cell b{display:block;margin-top:4px;font-size:16px}
+  .cell.on{background:#14462c}
+  .cell.err b{color:#ff8a8a;font-size:12px}
+  label{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;font-size:15px;border-top:1px solid rgba(255,255,255,.07)}
+  input,select{font:inherit;color:#fff;background:#111628;border:1px solid #2a3355;border-radius:10px;padding:6px 10px;width:120px;text-align:right}
+  select{text-align:left;width:auto}
+  button{font:inherit;color:#fff;border:0;cursor:pointer;padding:9px 14px;border-radius:12px;background:#2a3355;font-size:14px}
+  button.primary{background:#3ddc84;color:#06240f;font-weight:600}
+  button:active{transform:scale(.97)}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+  .presets button{padding:6px 10px;font-size:13px}
+  .presets button[aria-pressed="true"]{background:#00b7ff;color:#03202d}
+  .navi{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .big{font-size:26px;font-weight:600}
+  #log{margin:18px 0 0;padding:12px 16px;border-radius:16px;background:#111628;font:12px/1.6 ui-monospace,monospace;color:#9fb0d8;height:150px;overflow:auto;list-style:none}
+  #log .bad{color:#ff8a8a}
+  #log .ev{color:#7fe0ff}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a href="index.html">← 메뉴</a>
+    <h1>차곡 데이터</h1>
+    <span id="status">연결 중…</span>
+  </header>
+
+  <div class="panels">
+    <section aria-label="연료·에너지">
+      <h2>연료·에너지 <small>Fuel · EvBattery · Odometer</small></h2>
+      <dl id="energy"></dl>
+      <label>모의 연료 % <small style="opacity:.55">(에뮬 카드 없음)</small><input id="mockFuel" type="number" min="0" max="100" placeholder="끔"></label>
+    </section>
+
+    <section aria-label="트립·주행">
+      <h2>트립·주행 <small>Odometer · DrivingMode · Gear</small></h2>
+      <dl id="trip"></dl>
+    </section>
+
+    <section aria-label="도착 판정">
+      <h2>도착 판정 <small>Door · Seat</small></h2>
+      <div style="font-size:13px;opacity:.7">문 위치</div>
+      <div class="grid4" id="doors"></div>
+      <div style="font-size:13px;opacity:.7;margin-top:12px">착석</div>
+      <div class="grid4" id="seats"></div>
+      <dl style="margin-top:12px"><dt>도착 추정</dt><dd id="arrivalGuess">—</dd></dl>
+    </section>
+
+    <section class="wide" aria-label="순정 내비">
+      <h2>순정 내비 <small>NaviHelper</small></h2>
+      <div class="navi">
+        <div>
+          <div style="font-size:13px;opacity:.7">목적지</div>
+          <div class="presets" id="destPresets"></div>
+          <div style="font-size:13px;opacity:.7">경유지 (최대 2곳)</div>
+          <div class="presets" id="wpPresets"></div>
+          <label>경로 옵션<select id="option"></select></label>
+          <div id="optNote" style="font-size:12px;color:#ffd166;min-height:16px"></div>
+          <div class="btns">
+            <button class="primary" id="route">길찾기</button>
+            <button id="changeOpt">옵션만 변경</button>
+            <button id="reroute">재탐색</button>
+            <button id="cancel">안내 취소</button>
+            <button id="readNavi">내비 정보 읽기</button>
+          </div>
+        </div>
+        <div>
+          <dl>
+            <dt>내비 상태</dt><dd id="naviStatus">—</dd>
+            <dt>목적지</dt><dd id="destName">—</dd>
+            <dt>남은 거리</dt><dd id="destDist">—</dd>
+            <dt>남은 시간</dt><dd id="destTime">—</dd>
+            <dt>톨비</dt><dd id="destToll">—</dd>
+            <dt>경로 옵션</dt><dd id="routeOpt">—</dd>
+            <dt>현재 위치</dt><dd id="curLoc">—</dd>
+            <dt>제한 속도</dt><dd id="speedLimit">—</dd>
+            <dt>마지막 도착</dt><dd id="arrived">—</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="차곡 계산">
+      <h2>차곡 계산 <small>% → 리터 · 지출</small></h2>
+      <label>탱크 용량 (L)<input id="tank" type="number" value="50" min="1"></label>
+      <label>유가 (원/L)<input id="price" type="number" value="1680" min="0" step="10"></label>
+      <dl>
+        <dt>남은 연료</dt><dd id="liters" class="big">—</dd>
+        <dt>예상 주행가능</dt><dd id="estRange">—</dd>
+        <dt>출발 연료</dt><dd id="startFuel">—</dd>
+        <dt>지금까지 지출</dt><dd id="spent" class="big">—</dd>
+      </dl>
+      <div class="btns"><button id="markStart">지금을 출발로</button></div>
+    </section>
+  </div>
+
+  <ul id="log" aria-label="결과 기록"></ul>
+</main>
+<script>
+// Kotlin ChagokBridge(window.chagok)를 부르고, 결과는 window.onChagok(msg)로 받는다.
+const cc = window.chagok;
+const $ = (id) => document.getElementById(id);
+// SDK 단위: 연비 km/L, 배터리 Wh(에뮬 77400 = 77.4 kWh), 주행가능거리 m(에뮬 414000 = 414 km), 누적 주행 km
+const ENERGY = [['fuelPercent', '연료 잔량', (v) => `${v}%`], ['fuelEconomy', '현재 연비', (v) => `${(+v).toFixed(1)} km/L`],
+  ['fuelEconomyNow', '순간 연비', (v) => `${(+v).toFixed(1)} km/L`], ['fuelEconomyTotal', '누적 연비', (v) => `${(+v).toFixed(1)} km/L`],
+  ['evSoc', '배터리 SOC', (v) => `${v}%`], ['evLevel', '배터리 잔량', (v) => `${(v / 1000).toFixed(1)} kWh`],
+  ['evCapacity', '배터리 용량', (v) => `${(v / 1000).toFixed(1)} kWh`], ['evEfficiency', '전비', (v) => `${(+v).toFixed(1)} km/kWh`],
+  ['range', '주행가능거리', (v) => `${Math.round(v / 1000)} km`], ['evCharging', '충전 중', (v) => v ? '예' : '아니오'],
+  ['vin', '차대번호', (v) => v]];
+const TRIP = [['tripDistance', '이번 트립 거리', (v) => `${(+v).toFixed(1)} km`], ['tripTime', '이번 트립 시간', (v) => `${Math.floor(v / 60)}분 ${v % 60}초`],
+  ['refillDistance', '주유 후 거리', (v) => `${(+v).toFixed(1)} km`], ['odometer', '누적 주행', (v) => `${(+v).toFixed(1)} km`],
+  ['drivingMode', '주행 모드', (v) => v], ['gear', '기어', (v) => String(v).replace('GEAR_', '')], ['brake', '브레이크', (v) => v ? '밟음' : '뗌'],
+  ['uxRestricted', '주행 규제', (v) => v ? '규제 중(정차 화면 숨김)' : '없음']];
+const AREAS = [['ROW_1_LEFT', '운전석'], ['ROW_1_RIGHT', '조수석'], ['ROW_2_LEFT', '뒤 왼쪽'], ['ROW_2_RIGHT', '뒤 오른쪽']];
+const OPTIONS = [['RECOMMENDED', '추천'], ['SHORT_TIME', '최소 시간'], ['FREE', '무료 도로'], ['SHORT_DISTANCE', '최단 거리'], ['HIGHWAY', '고속도로 우선'], ['COMFORTABLE', '편한 길'], ['SCHOOL_ZONE', '어린이 보호구역 회피']];
+const DESTS = [['서울역', 37.5547, 126.9707], ['부산역', 35.1151, 129.0422], ['강릉역', 37.7641, 128.8996], ['판교역', 37.3948, 127.1112]];
+const WPS = [['죽전휴게소', 37.3297, 127.1117], ['천안삼거리휴게소', 36.8016, 127.1640], ['여주휴게소', 37.2958, 127.6075]];
+const fmt = {}, state = {}, lastShown = {};
+let start = null; // "지금을 출발로"에서 기록한 연료 %
+[...ENERGY, ...TRIP].forEach(([k, , f]) => fmt[k] = f);
+const rows = (list) => list.map(([k, label]) => `<dt>${label}</dt><dd id="v-${k}">—</dd>`).join('');
+$('energy').innerHTML = rows(ENERGY);
+$('trip').innerHTML = rows(TRIP);
+const cells = (kind) => AREAS.map(([a, n]) => `<div class="cell" id="${kind}-${a}">${n}<b>—</b></div>`).join('');
+$('doors').innerHTML = cells('door');
+$('seats').innerHTML = cells('seat');
+$('option').innerHTML = OPTIONS.map(([v, n]) => `<option value="${v}">${n}</option>`).join('');
+let dest = 0; const wps = new Set();
+let wantedOption = null; // 마지막으로 요청한 경로 옵션
+const optName = (v) => (OPTIONS.find(([k]) => k === v) || [v, v])[1];
+function showRouteOption(actual) {
+  $('routeOpt').textContent = actual ? optName(actual) : '—';
+  $('optNote').textContent = wantedOption && actual && actual !== wantedOption
+    ? `요청: ${optName(wantedOption)} → 내비 적용: ${optName(actual)} (내비가 옵션 요청을 반영하지 않음)` : '';
+}
+const drawPresets = () => {
+  $('destPresets').innerHTML = DESTS.map(([n], i) => `<button data-dest="${i}" aria-pressed="${i === dest}">${n}</button>`).join('');
+  $('wpPresets').innerHTML = WPS.map(([n], i) => `<button data-wp="${i}" aria-pressed="${wps.has(i)}">${n}</button>`).join('');
+};
+drawPresets();
+
+function log(text, cls = '') {
+  const li = document.createElement('li');
+  li.textContent = `${new Date().toLocaleTimeString('ko-KR', { hour12: false })}  ${text}`;
+  if (cls) li.className = cls;
+  $('log').prepend(li);
+  while ($('log').children.length > 60) $('log').lastChild.remove();
+}
+
+function showValue(key, v, err) {
+  state[key] = err ? undefined : v;
+  if (key.startsWith('door.') || key.startsWith('seat.')) {
+    const [kind, area] = key.split('.');
+    const el = $(`${kind}-${area}`);
+    el.classList.toggle('err', !!err);
+    const on = !err && (kind === 'door' ? v > 0 : !!v);
+    el.classList.toggle('on', on);
+    el.querySelector('b').textContent = err ? '읽기 실패' : kind === 'door' ? (v > 0 ? `열림 ${v}` : '닫힘') : (v ? '앉음' : '비어 있음');
+    return;
+  }
+  const el = $(`v-${key}`);
+  if (!el) return;
+  el.className = err ? 'err' : '';
+  el.textContent = err ? err : v == null ? '—' : fmt[key](v);
+  el.title = err || '';
+}
+
+// 연료 %: SDK 값이 없으면 모의값을 쓴다 (피그마: "콘솔 카드 없음 → 앱 모의값")
+function fuelPct() {
+  const mock = $('mockFuel').value;
+  if (mock !== '') return { v: +mock, mock: true };
+  return state.fuelPercent == null ? null : { v: state.fuelPercent, mock: false };
+}
+function recalc() {
+  const f = fuelPct(), tank = +$('tank').value || 0, price = +$('price').value || 0;
+  const el = $('v-fuelPercent');
+  if (f?.mock) { el.textContent = `${f.v}% (모의)`; el.className = 'mock'; }
+  if (!f) { ['liters', 'estRange', 'spent'].forEach((id) => $(id).textContent = '연료 % 없음'); return; }
+  const liters = tank * f.v / 100;
+  $('liters').textContent = `${liters.toFixed(1)} L`;
+  const eco = state.fuelEconomy || state.fuelEconomyTotal;
+  $('estRange').textContent = eco ? `${Math.round(liters * eco)} km (연비 ${(+eco).toFixed(1)})` : state.range > 0 ? `${Math.round(state.range / 1000)} km (차량 값)` : '연비 없음';
+  if (start == null) { $('startFuel').textContent = '—'; $('spent').textContent = '—'; return; }
+  $('startFuel').textContent = `${start}%`;
+  const used = Math.max(0, (start - f.v) / 100 * tank);
+  $('spent').textContent = `${Math.round(used * price).toLocaleString('ko-KR')}원 (${used.toFixed(1)} L)`;
+}
+// 문이 열리거나 운전석이 비면 도착으로 본다 (피그마: onDestinationArrived 또는 문·착석)
+function guessArrival() {
+  const doorOpen = AREAS.some(([a]) => state[`door.${a}`] > 0);
+  const driverOut = state['seat.ROW_1_LEFT'] === false;
+  const gearP = state.gear === 'GEAR_PARK';
+  $('arrivalGuess').textContent = gearP && (doorOpen || driverOut) ? '도착 (P + 문 열림/하차)' : gearP ? '정차 (P)' : state.gear ? '주행 중' : '—';
+}
+
+const NAVI_LABEL = { ready: '내비 SDK 연결됨', sent: '요청 보냄', routeStarted: '안내 시작', routeEnded: '안내 종료', routingCompleted: '경로 탐색 완료',
+  reRouteEnded: '재탐색 완료', routeOptionChanged: '경로 옵션 바뀜', routeCancelled: '안내 취소됨', waypointChanged: '경유지 바뀜',
+  destinationArrived: '목적지 도착', waypointArrived: '경유지 도착', destinationChanged: '목적지 바뀜', error: '내비 오류',
+  currentLocation: '현재 위치', routeState: '경로 상태', destination: '목적지 정보', waypoints: '경유지 목록', speedLimit: '제한 속도', drivingInfo: '주행 정보', status: '내비 상태' };
+const QUIET = new Set(['currentLocation', 'speedLimit', 'drivingInfo']); // 자주 오는 이벤트는 바뀔 때만 기록
+
+function onNavi(event, d) {
+  if (event === 'status') $('naviStatus').textContent = d;
+  if (event === 'ready') $('naviStatus').textContent = '연결됨';
+  if (event === 'destination') {
+    $('destName').textContent = d.name || '—';
+    $('destDist').textContent = d.remainDistance != null ? `${(d.remainDistance / 1000).toFixed(1)} km` : '—';
+    $('destTime').textContent = d.remainTime != null ? `${Math.round(d.remainTime / 60)}분` : '—';
+    $('destToll').textContent = d.tollFare != null ? `${d.tollFare.toLocaleString('ko-KR')}원` : '—';
+  }
+  if (event === 'routeState' || event === 'routeOptionChanged') showRouteOption(event === 'routeState' ? d.routeOption : d);
+  // 경로 요청(RouteInfo)에 넣은 옵션은 내비까지 전달되지 않는다 → 안내가 시작되면 옵션 변경을 따로 보낸다
+  if (event === 'routeStarted' && wantedOption && wantedOption !== 'RECOMMENDED') {
+    log(`경로 옵션 → ${wantedOption} (안내 시작 후 다시 요청)`); cc.changeRouteOption(wantedOption);
+  }
+  if (event === 'currentLocation') $('curLoc').textContent = `${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}`;
+  if (event === 'speedLimit') $('speedLimit').textContent = `${d} km/h`;
+  if (event === 'destinationArrived') $('arrived').textContent = `${d.name || ''} · ${(d.distance / 1000).toFixed(1)} km · ${Math.round(d.duration / 60)}분`;
+  // 경로 상태에는 구간별 교통 목록이 길게 붙어 있어 요약만 남긴다
+  const shown = event === 'routeState' ? { naviMode: d.naviMode, routeOption: d.routeOption, congestion: d.trafficStatus?.summary } : d;
+  const text = `${NAVI_LABEL[event] || event}${shown == null ? '' : ' ' + (typeof shown === 'object' ? JSON.stringify(shown) : shown)}`;
+  if (QUIET.has(event)) { if (lastShown[`navi.${event}`] === text) return; lastShown[`navi.${event}`] = text; }
+  log(`[내비] ${text}`, event === 'error' ? 'bad' : 'ev');
+}
+
+window.onChagok = (m) => {
+  $('status').textContent = '차량 연결됨';
+  if (m.type === 'value') {
+    const s = JSON.stringify(m.value);
+    if (lastShown[m.key] !== s) { lastShown[m.key] = s; log(`${m.key} = ${s}`); }
+    showValue(m.key, m.value);
+  } else if (m.type === 'error') {
+    if (lastShown[m.key] !== `err:${m.message}`) { lastShown[m.key] = `err:${m.message}`; log(`${m.key} 실패: ${m.message}`, 'bad'); }
+    if (!m.key.startsWith('navi')) showValue(m.key, null, m.message);
+  } else if (m.type === 'navi') {
+    onNavi(m.event, m.data);
+  }
+  recalc(); guessArrival();
+};
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.dest) { dest = +b.dataset.dest; drawPresets(); return; }
+  if (b.dataset.wp) { const i = +b.dataset.wp; wps.has(i) ? wps.delete(i) : wps.size < 2 && wps.add(i); drawPresets(); return; }
+  if (b.id === 'markStart') { const f = fuelPct(); start = f ? f.v : null; log(start == null ? '연료 %가 없어 출발값을 못 정했어요' : `출발 연료 ${start}%로 기록`); recalc(); return; }
+  if (!cc) return;
+  const [name, lat, lng] = DESTS[dest], opt = $('option').value;
+  switch (b.id) {
+    case 'route': {
+      // 경유지를 골랐으면 경유지 포함 요청, 아니면 일반 경로 요청
+      wantedOption = opt;
+      const list = [...wps].map((i) => ({ name: WPS[i][0], lat: WPS[i][1], lng: WPS[i][2] }));
+      log(`길찾기: ${[...list.map((w) => w.name), name].join(' → ')} (${optName(opt)})`);
+      if (list.length) cc.requestRouteWithWaypoints(lat, lng, name, opt, JSON.stringify(list));
+      else cc.requestRoute(lat, lng, name, opt);
+      break;
+    }
+    case 'changeOpt': wantedOption = opt; log(`경로 옵션 → ${optName(opt)}`); cc.changeRouteOption(opt); break;
+    case 'reroute': log('재탐색 요청'); cc.reRoute(); break;
+    case 'cancel': log('안내 취소 요청'); cc.cancelRoute(); break;
+    case 'readNavi': log('내비 정보 읽기 요청'); cc.readNavi(); break;
+  }
+});
+['mockFuel', 'tank', 'price'].forEach((id) => $(id).addEventListener('input', recalc));
+
+if (!cc) {
+  $('status').textContent = '앱 밖에서는 읽을 수 없어요';
+} else {
+  cc.readAll();
+  setInterval(() => cc.readAll(), 2000);
+  setTimeout(() => cc.readNavi(), 800);
+}
+</script>
+</body>
+</html>

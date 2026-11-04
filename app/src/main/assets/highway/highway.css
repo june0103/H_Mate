@@ -1,0 +1,122 @@
+/* Car-app additions on top of the Mission T styles: menu link, title, countdown and park lock. */
+.top {
+  position: fixed;
+  top: 24px; left: 28px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.menu {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  color: var(--ink);
+  font: 400 15px/1 var(--text);
+  text-decoration: none;
+}
+.record { display: flex; gap: 22px; margin: 0; }
+.record div { display: grid; gap: 4px; }
+.record dt { font: 300 10.5px/1 var(--text); letter-spacing: 0.18em; color: var(--muted); }
+.record dd { margin: 0; font: 300 16px/1 var(--text); font-variant-numeric: tabular-nums; }
+
+.hint { top: 96px; }
+.sub { top: 126px; }
+
+.title {
+  position: fixed;
+  top: 44%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 560px);
+  padding: 34px 38px 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: inset 0 0 0 1px var(--hair), var(--shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  text-align: center;
+}
+.title h1 { margin: 12px 0 0; font: 400 64px/1 var(--display); letter-spacing: 0.04em; }
+.title p { margin: 14px 0 0; font: 300 19px/1.5 var(--text); }
+.title b { font-weight: 500; }
+.howto {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 22px;
+  text-align: left;
+  font: 300 14px/1.4 var(--text);
+  color: var(--ink-2);
+}
+.howto b { color: var(--ink); margin-right: 6px; }
+.title .note { font-size: 13px; color: var(--muted); }
+
+.count {
+  position: fixed;
+  top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+  font: 400 140px/1 var(--display);
+  color: var(--primary);
+  pointer-events: none;
+}
+
+.lock {
+  position: fixed; inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  background: rgba(244, 243, 240, 0.86);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.lock strong {
+  display: grid; place-items: center;
+  width: 96px; height: 96px;
+  border-radius: 20px;
+  background: var(--ink);
+  color: #fff;
+  font: 400 60px/1 var(--display);
+}
+.lock span { font: 300 20px/1.4 var(--text); }
+
+/* Circuit: track picker on the title card */
+.title.circuit { top: 46%; width: min(92vw, 640px); }
+.tracks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; text-align: left; }
+.tracks button {
+  display: grid; gap: 4px;
+  padding: 12px 14px;
+  border: 0; border-radius: 16px;
+  background: rgba(18, 19, 22, 0.04);
+  box-shadow: inset 0 0 0 1px var(--hair);
+  text-align: left;
+}
+.tracks button b { font: 500 17px/1.2 var(--text); }
+.tracks button span { font: 300 12.5px/1.35 var(--text); color: var(--ink-2); }
+.tracks button small { font: 300 11.5px/1 var(--text); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tracks button[aria-checked="true"] { background: var(--primary-soft); box-shadow: inset 0 0 0 2px var(--primary); }
+.tracks button[aria-checked="true"] b { color: var(--primary); }
+.tracks button:disabled { opacity: 0.5; }
+
+/* Circuit: course map (Mission T's race map; no backdrop blur, which is costly on the emulator) */
+.minimap { position: fixed; left: 28px; top: 156px; width: 204px; padding: 5px; border-radius: 26px; background: rgba(18, 19, 22, 0.035); box-shadow: inset 0 0 0 1px rgba(18, 19, 22, 0.05); }
+.mm-core { padding: 12px 12px 10px; border-radius: 21px; background: rgba(255, 255, 255, 0.86); box-shadow: inset 0 1px 1px #fff, 0 22px 44px -28px rgba(18, 19, 22, 0.35); }
+.mm-head { display: flex; justify-content: space-between; align-items: baseline; }
+.mm-head b { font: 300 11px/1 var(--text); color: var(--muted); font-variant-numeric: tabular-nums; }
+.minimap canvas { display: block; width: 100%; height: 214px; margin-top: 8px; }
+.mm-legend { list-style: none; margin: 8px 0 0; padding: 8px 0 0; border-top: 1px solid var(--hair); display: grid; gap: 6px; font: 300 12px/1.2 var(--text); }
+.mm-legend li { display: grid; grid-template-columns: 12px 10px minmax(0, 1fr) auto; align-items: center; gap: 7px; color: var(--ink-2); }
+.mm-legend li b { font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mm-legend li i { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(18, 19, 22, 0.25); }
+.mm-legend li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-legend li small { color: var(--muted); font-size: 10.5px; }
+.mm-legend li.me span { color: var(--ink); }
+.mm-legend li.me b { color: var(--primary); }
+
+.card h2 { font-family: var(--text); font-weight: 500; font-size: 36px; }
+.card-cue { margin: 18px 0 0; color: var(--primary); font: 400 15px/1.4 var(--text); }
+.brand { font: 400 48px/1 var(--display); letter-spacing: 0.04em; }
+
+[hidden] { display: none !important; }

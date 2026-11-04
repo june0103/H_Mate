@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Highway</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="highway.css" />
+  <!-- Three.js is bundled in the app (vendor/three): the car may have no network. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.js",
+        "three/addons/": "./vendor/three/addons/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <header class="top">
+    <a class="menu" href="../index.html">← 메뉴</a>
+    <dl class="record">
+      <div><dt>최고 기록</dt><dd id="best">—</dd></div>
+      <div><dt>입력</dt><dd id="source">키보드</dd></div>
+    </dl>
+  </header>
+
+  <div id="hint" class="hint"></div>
+  <div id="sub" class="sub"></div>
+
+  <!-- Labels and units are set per mode in src/app.js (highway: distance · G · passed; circuit: lap · lap time · place). -->
+  <section class="dash" id="dash" aria-label="계기판">
+    <div class="stat"><span class="k" id="kA">거리</span><output><span id="gA">0.00</span><small id="uA">km</small></output></div>
+    <div class="stat"><span class="k" id="kB">G</span><output><span id="gB">1.0</span><small id="uB">g</small></output></div>
+    <div class="gauge" id="gauge"></div>
+    <div class="stat"><span class="k" id="kC">추월</span><output><span id="gC">0</span><small id="uC">대</small></output></div>
+    <div class="stat fuel"><span class="k">부스트</span><output><span id="gFuelTxt">100</span><small>%</small></output><div class="tank"><i id="gFuel"></i></div></div>
+  </section>
+  <aside id="minimap" class="minimap" aria-label="코스 지도" hidden></aside>
+
+  <div id="ctitle" class="title circuit" hidden>
+    <span class="eyebrow">Circuit · 3 laps</span>
+    <h1>CIRCUIT</h1>
+    <div id="tracks" class="tracks" role="radiogroup" aria-label="트랙"></div>
+    <p id="ctitleCue">트랙을 고르고 브레이크 페달을 <b>밟았다 떼면</b> 출발!</p>
+    <ul class="howto">
+      <li><b>핸들</b> 조향 · <b>브레이크</b> 감속</li>
+      <li><b>가속</b> 자동</li>
+      <li><b>방향지시등 오른쪽</b> 부스트</li>
+      <li><b>방향지시등 왼쪽</b> 점프 (JUMP 구간)</li>
+    </ul>
+    <p class="note">시작 화면에서는 방향지시등이나 화면 터치로 트랙을 바꿔요. 라이벌 3대와 3랩 레이스.</p>
+  </div>
+
+  <div id="title" class="title">
+    <span class="eyebrow">Endless highway</span>
+    <h1>HIGHWAY</h1>
+    <p id="titleCue">브레이크 페달을 <b>밟았다 떼면</b> 출발!</p>
+    <ul class="howto">
+      <li><b>핸들</b> 조향</li>
+      <li><b>브레이크</b> 감속 · 멈추면 후진</li>
+      <li><b>방향지시등 오른쪽</b> 부스트</li>
+      <li><b>방향지시등 왼쪽</b> 점프 · 누르고 있으면 호버</li>
+      <li><b>가속</b> 자동</li>
+    </ul>
+    <p class="note">끝없이 이어지는 고속도로. 시속 50km 이상으로 다른 차와 부딪히면 게임 오버예요.</p>
+  </div>
+
+  <div id="count" class="count" hidden></div>
+  <div id="lock" class="lock" hidden>
+    <strong>P</strong>
+    <span>변속 레버를 P에 두면 계속할 수 있어요</span>
+  </div>
+
+  <div id="card" class="card" hidden>
+    <span class="eyebrow">결과</span>
+    <h2 id="cardTitle">박살났어요</h2>
+    <p id="cardReason"></p>
+    <ul id="cardLines" class="plain"></ul>
+    <div class="card-total"><span id="cardTotalLabel">거리</span><strong id="cardTotal">0</strong></div>
+    <p id="cardBest" class="card-best"></p>
+    <p id="cardCue" class="card-cue">브레이크를 밟았다 떼면 새 도로로 다시 출발</p>
+  </div>
+
+  <div id="loading" class="loading"><span class="brand">HIGHWAY</span></div>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

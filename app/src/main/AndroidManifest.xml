@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature android:name="android.hardware.type.automotive" android:required="true" />
+
+    <!-- 조향각·브레이크 페달·기어 -->
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+    <!-- 방향지시등, 앰비언트 조명 읽기 -->
+    <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+    <!-- 차량 제어 화면: 앰비언트 조명 바꾸기, 공조 읽기·바꾸기 -->
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_LIGHTS" />
+    <uses-permission android:name="pleos.car.permission.CAR_CLIMATE" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_CLIMATE" />
+    <!-- 차량 제어 화면: 창문 위치 읽기·바꾸기 -->
+    <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_WINDOWS" />
+    <!-- 차곡 데이터 화면: 연료·배터리·주행가능거리, 문, 착석, 차량 정보 -->
+    <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />
+    <uses-permission android:name="pleos.car.permission.CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CAR_SEATS" />
+    <uses-permission android:name="pleos.car.permission.CAR_INFO" />
+    <!-- 차곡 데이터 화면: 순정 내비 경로 요청 -->
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CarApp">
+        <!-- 차곡 데이터 화면: 주행 규제 상태 읽기 -->
+        <uses-library android:name="android.car" android:required="false" />
+        <!-- 게임 앱이므로 distractionOptimized를 선언하지 않는다 → 주행 중에는 시스템이 차단 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- 차곡 데모: 주행 중에도 3줄 카드를 보여야 하므로 주행 최적화로 선언 (정차 전용 화면은 페이지가 직접 숨김).
+             디자인 가이드 Window Policy: 게임이 아니므로 가로·세로(1:1 분할) 창 모두 지원 -->
+        <activity
+            android:name=".ChagokActivity"
+            android:exported="false"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+            <meta-data android:name="distractionOptimized" android:value="true" />
+        </activity>
+    </application>
+
+</manifest>

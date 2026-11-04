@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>차곡</title>
+<style>
+  /* Pleos Connect UI Design Guide 기준 (Foundations: Colors·Typography, Components: Basic button)
+     크기는 가이드의 px(디스플레이 실제 픽셀)를 --u(= 1 실제 픽셀, JS가 devicePixelRatio로 맞춤)로 곱해 쓴다. */
+  /* System UI 폰트 Asta Sans (42dot, SIL OFL 1.1 — chagok/fonts/OFL.txt). 굵기 가변 폰트 */
+  @font-face{font-family:"Asta Sans";src:url("chagok/fonts/AstaSans-wght.ttf") format("truetype");font-weight:300 800;font-display:swap}
+  :root{
+    --u:.727px;
+    /* System color — Dark (기본). basic_00 #131417 · basic_50 #1D1E21 · basic_100 #313236 · basic_200 #44464E */
+    --bg-primary:#1D1E21; --bg-secondary:#131417; --bg-popup:#313236;
+    --surface-basic:#1D1E21; --surface-low:#131417; --surface-high:#313236; --surface-accent:#44464E;
+    --text-primary:#FFFFFF; --text-secondary:rgba(255,255,255,.84); --text-tertiary:rgba(255,255,255,.64); --text-quaternary:rgba(255,255,255,.32);
+    --btn-basic:rgba(255,255,255,.10); --btn-basic-pressed:rgba(255,255,255,.20); --btn-disabled:rgba(255,255,255,.05);
+    --btn-filled:#E0E1E6; --btn-filled-pressed:#C7C9CE; --btn-filled-text:#131417;
+    --line:rgba(255,255,255,.10);
+    --active:#00E074; --positive:#0082FF; --negative:#FF4C28;
+  }
+  /* 주간 모드: Light 토큰 */
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg-primary:#F7F8FA; --bg-secondary:#FFFFFF; --bg-popup:#FFFFFF;
+      --surface-basic:#FFFFFF; --surface-low:#F7F8FA; --surface-high:#EDEEF2; --surface-accent:#E0E1E6;
+      --text-primary:#131417; --text-secondary:rgba(19,20,23,.84); --text-tertiary:rgba(19,20,23,.64); --text-quaternary:rgba(19,20,23,.32);
+      --btn-basic:rgba(19,20,23,.05); --btn-basic-pressed:rgba(19,20,23,.10); --btn-disabled:rgba(19,20,23,.05);
+      --btn-filled:#44464E; --btn-filled-pressed:#313236; --btn-filled-text:#FFFFFF;
+      --line:rgba(19,20,23,.10);
+      --active:#02C265; --positive:#0064FF; --negative:#FE3D16;
+    }
+  }
+  /* Typography: Headline 60/56/48, Title 40/36/32, Body 30/28/26, Label 24/20 (size/line-height) */
+  .headline-s{font-size:calc(48*var(--u));line-height:calc(64*var(--u));font-weight:800}
+  .title-m{font-size:calc(36*var(--u));line-height:calc(44*var(--u));font-weight:800}
+  .title-s{font-size:calc(32*var(--u));line-height:calc(40*var(--u));font-weight:700}
+  .body-l{font-size:calc(30*var(--u));line-height:calc(38*var(--u))}
+  .body-m{font-size:calc(28*var(--u));line-height:calc(36*var(--u))}
+  .body-s{font-size:calc(26*var(--u));line-height:calc(34*var(--u))}
+  .label-m{font-size:calc(24*var(--u));line-height:calc(28*var(--u))}
+  .label-s{font-size:calc(20*var(--u));line-height:calc(24*var(--u))}
+
+  html,body{margin:0;min-height:100%;background:var(--bg-secondary);color:var(--text-primary);font-family:"Asta Sans",system-ui,"Noto Sans KR",sans-serif;user-select:none;-webkit-tap-highlight-color:transparent}
+  body{font-size:calc(26*var(--u));line-height:calc(34*var(--u))}
+  /* Basic button: Primary(basic) / Secondary(filled), 상태 Pressed·Disabled */
+  button{font:inherit;font-size:calc(26*var(--u));font-weight:600;color:var(--text-primary);border:0;cursor:pointer;background:var(--btn-basic);border-radius:999px;padding:0 calc(32*var(--u));min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  button:active{background:var(--btn-basic-pressed)}
+  button:disabled{background:var(--btn-disabled);color:var(--text-quaternary)}
+  button.on,button.filled{background:var(--btn-filled);color:var(--btn-filled-text)}
+  button.on:active,button.filled:active{background:var(--btn-filled-pressed)}
+  button.ghost{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+  input,select{font:inherit;color:var(--text-primary);background:var(--surface-high);border:0;border-radius:calc(16*var(--u));padding:0 14px;min-height:48px;box-sizing:border-box}
+  input[type=checkbox]{min-height:0;width:24px;height:24px;accent-color:var(--active)}
+  header{display:flex;align-items:center;gap:14px;padding:16px 24px 0;flex-wrap:wrap}
+  header a{display:inline-flex;align-items:center;min-height:48px;padding:0 calc(28*var(--u));border-radius:999px;background:var(--btn-basic);color:var(--text-primary);text-decoration:none;font-weight:600}
+  header h1{margin:0}
+  .chips{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--surface-high);color:var(--text-tertiary)}
+  .chip b{color:var(--text-primary)}
+  nav{display:flex;gap:4px;padding:12px 24px 0;overflow-x:auto}
+  nav button{background:transparent;color:var(--text-tertiary);border-radius:calc(24*var(--u)) calc(24*var(--u)) 0 0;min-height:64px;padding:0 calc(36*var(--u));font-size:calc(28*var(--u))}
+  nav button svg{width:calc(40*var(--u));height:calc(40*var(--u))}
+  nav button[aria-selected="true"]{background:var(--bg-primary);color:var(--text-primary);font-weight:700}
+  main{margin:0 24px 24px;padding:22px;border-radius:0 calc(32*var(--u)) calc(32*var(--u)) calc(32*var(--u));background:var(--bg-primary);box-sizing:border-box}
+  section[hidden]{display:none}
+  h2{margin:0 0 12px;font-size:calc(32*var(--u));line-height:calc(40*var(--u));font-weight:700}
+  .muted{color:var(--text-tertiary)}
+  .small{font-size:calc(24*var(--u));line-height:calc(28*var(--u))}
+  .card{padding:22px 24px;border-radius:calc(32*var(--u));background:var(--surface-high)}
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start}
+  .stack{display:grid;gap:14px}
+  /* 홈 */
+  .balance .big{margin:6px 0}
+  .balance .big small{font-size:calc(30*var(--u));font-weight:600;color:var(--text-secondary)}
+  .kv{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--text-tertiary);font-size:calc(24*var(--u));line-height:calc(32*var(--u))}
+  .kv b{color:var(--text-primary);font-weight:600}
+  .refill{box-shadow:inset 0 0 0 2px var(--positive)}
+  .refill .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .trans{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+  .trans div{padding:14px;border-radius:calc(24*var(--u));background:var(--surface-low);color:var(--text-tertiary);font-size:calc(24*var(--u))}
+  .trans div b{display:block;margin-top:4px;color:var(--text-primary);font-size:calc(28*var(--u));line-height:calc(36*var(--u))}
+  .cta{min-height:72px;font-size:calc(30*var(--u));font-weight:800}
+  /* 갈 곳 */
+  .find{display:grid;grid-template-columns:minmax(260px,300px) 1fr;gap:18px}
+  .opts{display:grid;gap:16px;align-content:start}
+  .opts .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .opts .seg button{padding:0 calc(28*var(--u))}
+  .opts label{display:flex;align-items:center;gap:10px;min-height:48px}
+  .scope{color:var(--text-tertiary);font-size:calc(24*var(--u));line-height:calc(34*var(--u))}
+  .scope b{color:var(--text-primary)}
+  .deck{position:relative;border-radius:calc(32*var(--u));padding:18px;min-height:520px;overflow:hidden;background:var(--surface-low)}
+  .deck .bgart{position:absolute;inset:0;opacity:.18}
+  .deck .bgart svg{width:100%;height:100%}
+  .cards{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .place{display:flex;flex-direction:column;border-radius:calc(32*var(--u));overflow:hidden;background:var(--surface-high)}
+  .place .art{height:110px}
+  .place .art svg{width:100%;height:100%;display:block}
+  .place .body{padding:14px;display:grid;gap:8px;flex:1}
+  .place h3{margin:0;font-size:calc(30*var(--u));line-height:calc(38*var(--u));font-weight:700}
+  .place .tag{color:var(--text-tertiary);font-size:calc(24*var(--u))}
+  .place .line{font-size:calc(24*var(--u));line-height:calc(32*var(--u));color:var(--text-secondary)}
+  .place .line b{color:var(--text-primary)}
+  .place .line .ok{color:var(--active)} .place .line .need{color:var(--negative)}
+  .place .split{display:none;padding:10px 12px;border-radius:calc(20*var(--u));background:var(--surface-low);color:var(--text-tertiary);font-size:calc(24*var(--u));line-height:calc(32*var(--u))}
+  .place.open .split{display:block}
+  .place .btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto}
+  .place .btns .go{grid-column:1 / -1}
+  .place .btns button{padding:0 8px}
+  .notice{padding:14px 16px;border-radius:calc(24*var(--u));background:var(--surface-high);box-shadow:inset 4px 0 0 var(--negative);color:var(--text-primary);margin-bottom:12px;position:relative}
+  /* 기록 */
+  .map{width:100%;height:auto;aspect-ratio:600/520;border-radius:calc(32*var(--u));background:var(--surface-low)}
+  .rec{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);font-size:calc(24*var(--u));line-height:calc(32*var(--u))}
+  .rec:first-child{border-top:0}
+  .rec b{font-size:calc(26*var(--u))}
+  .rec button{min-height:40px;padding:0 14px;font-size:calc(20*var(--u))}
+  /* 설정 */
+  .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}
+  .form label{display:grid;gap:8px;color:var(--text-tertiary);font-size:calc(24*var(--u))}
+  /* 주행 중: 3줄 카드만 (정차 전용 화면 숨김). 핵심 정보 5mm 이상 → Headline 크기 */
+  #drive{display:none;position:fixed;inset:0;background:var(--bg-secondary);align-items:center;justify-content:center;padding:24px}
+  body.driving #drive{display:flex}
+  body.driving header,body.driving nav,body.driving main{display:none}
+  #drive .card{min-width:min(520px,100%);box-sizing:border-box;font-size:calc(48*var(--u));line-height:calc(64*var(--u));font-weight:800;padding:32px 40px}
+  #drive .card div:first-child{font-size:calc(30*var(--u));line-height:calc(38*var(--u));color:var(--text-tertiary);font-weight:600}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);padding:12px 22px;border-radius:999px;background:var(--bg-popup);color:var(--text-primary);font-size:calc(24*var(--u));opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  #toast.show{opacity:1}
+  /* Window Policy: 1:1 분할·세로(portrait) 창에서도 쓸 수 있게 */
+  @media (max-width: 900px){
+    .grid2,.find,.form{grid-template-columns:1fr}
+    .chips{margin-left:0}
+    main{border-radius:0 0 calc(32*var(--u)) calc(32*var(--u))}
+  }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html">← 메뉴</a>
+  <h1 class="title-m">차곡</h1>
+  <span class="muted label-m">지금 차에 든 돈으로, 어디까지</span>
+  <div class="chips">
+    <span class="chip">기어 <b id="cGear">—</b></span>
+    <span class="chip">인원 <b id="cPeople">—</b></span>
+    <span class="chip">위치 <b id="cLoc">—</b></span>
+    <a class="chip" href="chagok.html" style="text-decoration:none">데이터 화면</a>
+  </div>
+</header>
+<nav role="tablist">
+  <!-- 아이콘 + 텍스트 라벨 (Iconography: 48 그리드, Outlined) -->
+  <button role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M8 22 24 9l16 13v17H29V28h-10v11H8z"/></svg>홈</button>
+  <button role="tab" data-tab="find" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><circle cx="24" cy="24" r="16"/><path d="m30 18-4 8-8 4 4-8z"/></svg>갈 곳 찾기</button>
+  <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M24 42s13-12.5 13-22a13 13 0 0 0-26 0c0 9.5 13 22 13 22z"/><circle cx="24" cy="20" r="4.5"/></svg>여행 기록</button>
+  <button role="tab" data-tab="settings" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M10 14h28M10 24h28M10 34h28"/><circle cx="30" cy="14" r="3.5" fill="currentColor"/><circle cx="18" cy="24" r="3.5" fill="currentColor"/><circle cx="26" cy="34" r="3.5" fill="currentColor"/></svg>설정</button>
+</nav>
+<main>
+  <!-- F1 잔고 카드, F9 번역 카드, 진행 중 여행 -->
+  <section id="tab-home">
+    <div class="grid2">
+      <div class="stack">
+        <div class="card balance">
+          <div class="muted" id="balTitle">잔고</div>
+          <div class="big headline-s" id="balWon">—</div>
+          <div class="kv" id="balKv"></div>
+        </div>
+        <div class="card refill" id="refill" hidden></div>
+        <div class="card" id="tripCard" hidden></div>
+      </div>
+      <div class="stack" style="align-content:start">
+        <div class="card">
+          <h2>추가 비용 없이</h2>
+          <div class="scope" id="homeScope">—</div>
+          <div class="trans" id="homeTrans"></div>
+        </div>
+        <div class="card" id="peopleCard">—</div>
+        <button class="cta filled" data-goto="find">이 돈으로 갈 곳 보기 →</button>
+        <button class="ghost" id="manualRefill">주유·충전했어요 (직접 입력)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- F2 범위, F3 테마, F5 추천 카드, F8 내비 전달, F11 1인 몫 -->
+  <section id="tab-find" hidden>
+    <div class="find">
+      <div class="opts">
+        <div><h2>더 쓸 돈</h2><div class="seg" id="extraSeg"></div></div>
+        <div><h2>일정</h2><div class="seg" id="daySeg"></div></div>
+        <div><h2>테마 <small class="muted">(0~2개)</small></h2><div class="seg" id="themeSeg"></div></div>
+        <div><h2>정렬</h2><div class="seg" id="sortSeg"></div></div>
+        <label><input type="checkbox" id="useRest"> 가는 길에 휴게소 1곳 들르기</label>
+        <div class="scope card" id="scope" style="padding:14px"></div>
+      </div>
+      <div class="deck" id="deck">
+        <div class="bgart" id="deckArt"></div>
+        <div id="deckNotice"></div>
+        <div class="cards" id="cards"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- F10 여행 기록 지도 -->
+  <section id="tab-log" hidden>
+    <div class="grid2">
+      <svg class="map" id="map" viewBox="0 0 600 520" aria-label="여행 기록 지도"></svg>
+      <div class="stack" style="align-content:start">
+        <div class="card"><h2 id="logSum">다녀온 곳 0곳</h2><div class="muted small">도착하면 실제로 든 돈(에너지 소비 + 통행료)과 함께 핀이 꽂혀요.</div></div>
+        <div class="card" id="recList"></div>
+        <button class="ghost" id="demoRecords">시연용 기록 3개 넣기</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-settings" hidden>
+    <div class="form">
+      <label>차종 (탱크·배터리 용량, 기본 연비·전비)<select id="sCar"></select></label>
+      <label>차량 종류<select id="sMode"><option value="auto">자동 (SDK가 SOC를 주면 전기차)</option><option value="ev">전기차</option><option value="ice">내연 (모의 연료 %로 시연)</option></select></label>
+      <label>모의 연료 % (내연 시연용, 에뮬은 연료 신호 없음)<input id="sMockFuel" type="number" min="0" max="100"></label>
+      <label>휘발유 단가 (원/L)<input id="sGas" type="number" step="10"></label>
+      <label>집 충전 단가 (원/kWh)<input id="sHome" type="number" step="10"></label>
+      <label>급속 충전 단가 (원/kWh)<input id="sFast" type="number" step="10"></label>
+      <label>전기차 기준 단가<select id="sSource"><option value="home">집 충전</option><option value="fast">급속 충전</option></select></label>
+      <label>안전 여유 (km, 남은 거리의 15%와 큰 쪽)<input id="sMargin" type="number" step="5"></label>
+      <label>추천 카드 수<select id="sCount"><option>3</option><option>4</option><option>5</option></select></label>
+      <label>출퇴근 왕복 거리 (km, 번역 카드용)<input id="sCommute" type="number" step="1"></label>
+      <label>인원<select id="sPeople"><option value="0">자동 (좌석 착석 수)</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+      <label>기록<button class="ghost" id="clearAll" type="button">여행 기록·진행 중 여행 지우기</button></label>
+    </div>
+    <p class="muted small" style="margin-top:22px;line-height:1.7">
+      잔고 = 잔량(% × 용량) × 단가, 갈 수 있는 거리 = 잔량 × 연비(전비). SDK가 연비·전비를 주지 않으면(에뮬레이터) 차종 표의 값을 써요.<br>
+      범위 반경 ≈ (갈 수 있는 거리 − 안전 여유 + 추가 금액만큼의 거리) ÷ 2 ÷ 도로 굴곡 1.3. 후보지·통행료·주차비는 데모 고정 데이터예요.
+    </p>
+  </section>
+</main>
+
+<div id="drive"><div class="card" id="driveCard"></div></div>
+<div id="toast"></div>
+
+<script src="chagok/data.js"></script>
+<script>
+// Kotlin ChagokBridge(window.chagok)를 부르고, 결과는 window.onChagok(msg)로 받는다.
+const cc = window.chagok;
+const $ = (id) => document.getElementById(id);
+// 가이드의 px는 디스플레이 실제 픽셀 → CSS 1px = devicePixelRatio 실제 픽셀
+document.documentElement.style.setProperty('--u', `${1 / (window.devicePixelRatio || 1)}px`);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('chagok.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('chagok.' + k, JSON.stringify(v)); } catch {} },
+};
+const settings = Object.assign({ car: 'ioniq5', mode: 'auto', mockFuel: 45, gas: 1680, home: 300, fast: 350, source: 'home',
+  margin: 50, count: 4, commute: 30, people: 0 }, store.get('settings', {}));
+const ui = { extra: 0, day: 'day', themes: [], sort: 'rec', rest: false, shown: [] };
+// SDK에서 읽은 값. 실패한 값은 null (에뮬에서는 연료·연비·전비가 실패)
+const live = { evSoc: null, evCapacity: null, fuelPercent: null, fuelEconomy: null, evEfficiency: null, range: null,
+  gear: null, ux: false, charging: null, seats: {}, origin: { ...DEFAULT_ORIGIN }, locFromNavi: false, nav: {} };
+
+// ── 형식 ──
+function won(n) {
+  n = Math.max(0, Math.round(n));
+  if (n < 10000) return `${(Math.round(n / 100) * 100).toLocaleString('ko-KR')}원`;
+  const r = Math.round(n / 1000), man = Math.floor(r / 10), chun = r % 10;
+  return `${man}만${chun ? ` ${chun}천` : ''} 원`;
+}
+const km = (v) => `${Math.round(v)}km`;
+function dur(min) { min = Math.round(min); const h = Math.floor(min / 60), m = min % 60; return h ? `${h}시간${m ? ` ${m}분` : ''}` : `${m}분`; }
+let toastTimer;
+function toast(t) { $('toast').textContent = t; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2600); }
+
+// ── 계산 규칙 (PRD 5-3) ──
+const ROAD = 1.3;       // 도로 굴곡 계수
+const SPEED = 70;       // 평균 주행 속도 km/h (소요 시간 추정)
+const DAY_MAX_ONEWAY = 3 * 60; // 당일: 편도 3시간 이내
+const NIGHT_LOCAL = 30; // 1박: 현지 이동 여유 km
+function haversine(a, b) {
+  const R = 6371, rad = Math.PI / 180, dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+const roadKm = (a, b) => haversine(a, b) * ROAD;
+function car() { return CARS.find((c) => c.id === settings.car) || CARS[0]; }
+function isEV() { return settings.mode === 'auto' ? live.evSoc != null : settings.mode === 'ev'; }
+// 지금 잔고: 잔량(%), 용량, 연비(전비), 단가 → 금액·거리
+function balance() {
+  const ev = isEV(), c = car();
+  const pct = ev ? live.evSoc : (live.fuelPercent ?? +settings.mockFuel);
+  const capacity = ev ? (live.evCapacity ? live.evCapacity / 1000 : (c.ev ? c.capacity : 77.4)) : (c.ev ? 50 : c.capacity);
+  const sdkEff = ev ? live.evEfficiency : live.fuelEconomy;
+  const eff = sdkEff > 0 ? sdkEff : (c.ev === ev ? c.eff : (ev ? 5.0 : 13.0));
+  const unit = ev ? (settings.source === 'fast' ? +settings.fast : +settings.home) : +settings.gas;
+  const amount = (pct ?? 0) / 100 * capacity;
+  const dist = amount * eff;
+  const margin = Math.max(+settings.margin, dist * 0.15);
+  return { ev, pct, capacity, eff, effFromSdk: sdkEff > 0, unit, amount, won: amount * unit, dist, margin, usable: Math.max(0, dist - margin),
+    unitName: ev ? 'kWh' : 'L', energyName: ev ? '충전' : '주유', tankName: ev ? '배터리' : '탱크' };
+}
+// 범위: 추가 금액·일정에 따른 왕복 가능 거리와 편도 반경
+function scope(b, extra = ui.extra, day = ui.day) {
+  const extraKm = extra / b.unit * b.eff;
+  const rt = Math.max(0, b.usable + extraKm - (day === 'night' ? NIGHT_LOCAL : 0));
+  return { extraKm, rt, radius: rt / 2 / ROAD };
+}
+function people() { if (+settings.people) return +settings.people; const n = Object.values(live.seats).filter(Boolean).length; return Math.max(1, n); }
+// 후보지 하나의 비용 (왕복). 잔고 안이면 추가 주유·충전 0
+function costOf(p, b) {
+  const one = roadKm(live.origin, p), rt = one * 2;
+  const energy = rt / b.eff * b.unit;
+  const total = energy + p.toll * 2 + p.parking;
+  const needKm = Math.max(0, rt + b.margin - b.dist);
+  return { one, rt, energy, toll: p.toll * 2, parking: p.parking, total, extraWon: needKm / b.eff * b.unit, minutes: one / SPEED * 60 };
+}
+function bearingSector(p) { const a = Math.atan2(p.lng - live.origin.lng, p.lat - live.origin.lat); return Math.round((a + Math.PI) / (Math.PI / 4)) % 8; }
+const visited = () => new Set(store.get('records', []).map((r) => r.name));
+
+// 범위 안 후보를 점수순으로. 점수 = 테마 일치 + 비용 적합도(범위의 60% 근처) − 최근 방문
+function ranked(b, sc) {
+  const seen = visited();
+  return PLACES.map((p) => ({ p, c: costOf(p, b) }))
+    .filter(({ p, c }) => c.rt <= sc.rt && (ui.day === 'night' || c.minutes <= DAY_MAX_ONEWAY) && (!ui.themes.length || ui.themes.includes(p.theme)))
+    .map((x) => ({ ...x, score: 1 - Math.abs(x.c.rt / Math.max(1, sc.rt) - 0.6) - (seen.has(x.p.name) ? 0.8 : 0) }))
+    .sort((a, b2) => ui.sort === 'cost' ? a.c.total - b2.c.total : b2.score - a.score);
+}
+// 카드 3~5장: 서로 다른 테마·방향이 섞이도록 고른다
+function pick(list, n) {
+  const out = [], themes = new Set(), sectors = new Set();
+  for (const pass of [0, 1, 2]) {
+    for (const x of list) {
+      if (out.length >= n) break;
+      if (out.includes(x)) continue;
+      const s = bearingSector(x.p);
+      if (pass === 0 && (themes.has(x.p.theme) || sectors.has(s))) continue;
+      if (pass === 1 && themes.has(x.p.theme) && ui.themes.length !== 1) continue;
+      out.push(x); themes.add(x.p.theme); sectors.add(s);
+    }
+  }
+  return ui.sort === 'cost' ? out.sort((a, b2) => a.c.total - b2.c.total) : out;
+}
+
+// ── 임시 일러스트 (BX 에셋이 오면 이 함수만 이미지로 바꾼다) ──
+function art(themeId, seed = 0) {
+  const t = THEMES.find((x) => x.id === themeId) || THEMES[0], [c1, c2] = t.c, k = (seed * 37) % 60;
+  const g = `<defs><linearGradient id="g${themeId}${seed}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c2}"/><stop offset="1" stop-color="${c1}"/></linearGradient></defs><rect width="300" height="140" fill="url(#g${themeId}${seed})"/>`;
+  const shapes = {
+    sea: `<circle cx="${210 - k}" cy="48" r="20" fill="#ffe7a6" opacity=".9"/><path d="M0 92 Q37 80 75 92 T150 92 T225 92 T300 92 V140 H0Z" fill="#0b4f7a" opacity=".8"/><path d="M0 108 Q37 98 75 108 T150 108 T225 108 T300 108 V140 H0Z" fill="#06324f"/>`,
+    lake: `<path d="M0 90 L${60 + k} 40 L${130 + k} 90Z" fill="#2c6b5d"/><path d="M${120 - k / 2} 90 L${200 - k / 2} 30 L280 90Z" fill="#1f5b4f"/><ellipse cx="150" cy="112" rx="170" ry="30" fill="#9fe0d0" opacity=".55"/>`,
+    river: `<path d="M${40 + k} 0 C 120 50, 40 90, ${170 + k} 140 L ${220 + k} 140 C 100 90, 180 50, ${90 + k} 0Z" fill="#cfe6ff" opacity=".6"/><path d="M0 70 L300 60 V140 H0Z" fill="#21456b" opacity=".35"/>`,
+    mountain: `<path d="M0 140 L${70 + k} 40 L${150 + k} 140Z" fill="#2f4a25"/><path d="M${90 + k / 2} 140 L${190 + k / 2} 25 L290 140Z" fill="#3e6230"/><path d="M${178 + k / 2} 39 L${190 + k / 2} 25 L${202 + k / 2} 39Z" fill="#fff" opacity=".8"/>`,
+    park: [0, 1, 2, 3, 4].map((i) => `<rect x="${30 + i * 58 + k / 3}" y="88" width="6" height="30" fill="#4a3520"/><circle cx="${33 + i * 58 + k / 3}" cy="${80 - (i % 2) * 8}" r="${20 + (i % 3) * 4}" fill="#3b5a1e"/>`).join('') + '<rect y="116" width="300" height="24" fill="#2b4416"/>',
+    city: [0, 1, 2, 3, 4, 5, 6].map((i) => `<rect x="${i * 44 + (k % 20)}" y="${60 + ((i * 29) % 40)}" width="36" height="90" fill="#2a1d3d"/><rect x="${i * 44 + 8 + (k % 20)}" y="${72 + ((i * 29) % 40)}" width="6" height="6" fill="#ffd27a"/>`).join(''),
+    island: `<rect y="92" width="300" height="48" fill="#174a5c"/><path d="M${80 + k} 96 Q ${150 + k} 40 ${220 + k} 96Z" fill="#3c6b3a"/><circle cx="60" cy="40" r="16" fill="#fff3c4" opacity=".9"/>`,
+    drive: `<rect y="70" width="300" height="70" fill="#5a3a24" opacity=".5"/><path d="M${120 + k} 140 C 140 100, 200 90, 300 76 L 300 92 C 210 104, 170 112, ${170 + k} 140Z" fill="#2b2b2b"/><path d="M${145 + k} 140 C 165 108, 210 98, 300 84" stroke="#ffd27a" stroke-width="3" stroke-dasharray="10 8" fill="none"/>`,
+  };
+  return `<svg viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">${g}${shapes[themeId] || ''}</svg>`;
+}
+const themeName = (id) => (THEMES.find((t) => t.id === id) || {}).name || id;
+
+// ── 홈 ──
+function renderHome() {
+  const b = balance(), sc = scope(b, 0, 'day');
+  $('balTitle').textContent = `${b.tankName}에 남은 돈 (${b.ev ? '전기차' : '내연'})`;
+  $('balWon').innerHTML = b.pct == null ? '읽는 중…' : `${won(b.won)}어치 <small>· 약 ${km(b.dist)}</small>`;
+  $('balKv').innerHTML = [
+    [b.ev ? 'SOC' : '연료', b.pct == null ? '—' : `${Math.round(b.pct)}%${!b.ev && live.fuelPercent == null ? ' (모의)' : ''}`],
+    ['잔량', `${b.amount.toFixed(1)} ${b.unitName} / ${b.capacity.toFixed(1)} ${b.unitName}`],
+    [b.ev ? '전비' : '연비', `${b.eff.toFixed(1)} km/${b.unitName}${b.effFromSdk ? '' : ' (차종 표)'}`],
+    ['단가', `${b.unit.toLocaleString('ko-KR')}원/${b.unitName}${b.ev ? (settings.source === 'fast' ? ' (급속)' : ' (집 충전)') : ''}`],
+    ...(live.range > 0 ? [['차량 표시 주행가능', km(live.range / 1000)]] : []),
+  ].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
+  $('homeScope').innerHTML = b.pct == null ? '—' : sc.rt <= 0
+    ? `안전 여유(${km(b.margin)})를 빼면 추가 비용 없이 갈 수 있는 범위가 없어요. 갈 곳 찾기에서 +1만 원부터 볼 수 있어요.`
+    : `안전 여유 ${km(b.margin)}를 남기고 <b>왕복 ${km(sc.rt)}</b>, 반경 약 <b>${km(sc.radius)}</b>까지 추가 ${b.energyName} 없이 다녀올 수 있어요.`;
+  const list = ranked(b, sc);
+  const far = list.slice().sort((x, y) => y.c.rt - x.c.rt)[0];
+  $('homeTrans').innerHTML = far ? [['가장 먼 곳', far.p.name], ['왕복 비용', won(far.c.total)], ['후보', `${list.length}곳`]].map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('') : '';
+  const n = people();
+  $('peopleCard').innerHTML = n > 1
+    ? `<h2>${n}명이 타고 있어요</h2><div class="muted">1인 기준으로 보여 드려요. 잔고 1인 몫 <b style="color:#fff">${won(b.won / n)}</b></div>`
+    : `<h2>혼자 타고 있어요</h2><div class="muted small">좌석 착석이 바뀌면 1인 몫으로 자동 계산해요.${+settings.people ? ' (설정에서 인원 고정 중)' : ''}</div>`;
+  renderTrip();
+  renderRefill();
+}
+
+// ── F9 주유·충전 직후 번역 카드 ──
+let refill = store.get('refill', null);
+function translate(amountWon) {
+  const b = balance(), dist = amountWon / b.unit * b.eff;
+  const all = PLACES.map((p) => ({ p, one: roadKm(live.origin, p) }));
+  const oneWay = all.filter((x) => x.one <= dist).sort((a, c) => c.one - a.one)[0];
+  const round = all.filter((x) => x.one * 2 <= dist).sort((a, c) => c.one - a.one)[0];
+  return { dist, items: [
+    ['편도', oneWay ? `${oneWay.p.name}` : '가까운 곳만'],
+    ['출근', `${Math.floor(dist / Math.max(1, +settings.commute))}일`],
+    ['왕복 1번', round ? round.p.name : '—'],
+  ] };
+}
+function renderRefill() {
+  const el = $('refill');
+  if (!refill) { el.hidden = true; return; }
+  el.hidden = false;
+  const b = balance();
+  const fullWon = Math.max(0, (refill.to - refill.from) / 100 * b.capacity * b.unit);
+  if (refill.amount == null) {
+    el.innerHTML = `<h2>방금 ${b.energyName}했네요 ${refill.to > refill.from ? `(${Math.round(refill.from)}% → ${Math.round(refill.to)}%)` : ''}</h2>
+      <div class="muted small">결제 금액은 차가 몰라요. 얼마 넣었는지 골라 주세요.</div>
+      <div class="row"><button data-amt="30000">3만 원</button><button data-amt="50000">5만 원</button>
+      ${fullWon > 0 ? `<button data-amt="${Math.round(fullWon)}">채운 만큼 (${won(fullWon)})</button>` : ''}
+      <input id="amtIn" type="number" placeholder="직접 (원)" style="width:130px"><button data-amt="input">확인</button><button class="ghost" data-amt="close">닫기</button></div>`;
+    return;
+  }
+  const t = translate(refill.amount);
+  el.innerHTML = `<h2>방금 넣은 ${won(refill.amount)} = 약 ${km(t.dist)}</h2>
+    <div class="trans">${t.items.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('')}</div>
+    <div class="row"><button class="on" data-amt="go">이 돈으로 갈 곳 보기</button><button class="ghost" data-amt="close">닫기</button></div>`;
+}
+$('refill').addEventListener('click', (e) => {
+  const a = e.target.closest('[data-amt]')?.dataset.amt;
+  if (!a) return;
+  if (a === 'close') refill = null;
+  else if (a === 'go') { ui.extra = 0; refill = null; showTab('find'); }
+  else if (a === 'input') { const v = +$('amtIn').value; if (!(v > 0)) return toast('금액을 넣어 주세요'); refill.amount = v; }
+  else refill.amount = +a;
+  store.set('refill', refill); renderHome();
+});
+$('manualRefill').addEventListener('click', () => { const p = balance().pct ?? 0; refill = { from: p, to: p, at: Date.now(), amount: null }; store.set('refill', refill); renderHome(); });
+// 잔량 % 상승(3%p 이상) 또는 충전 스위치 ON → OFF 를 주유·충전으로 본다. 마지막 %는 저장해 두어 다음 시동 때도 감지한다.
+let chargeStart = null;
+function watchRefill(pctNow) {
+  if (pctNow == null) return;
+  const key = isEV() ? 'lastPct.ev' : 'lastPct.ice';
+  const last = store.get(key, null);
+  if (last != null && pctNow - last >= 3 && live.gear !== 'GEAR_DRIVE') {
+    refill = { from: last, to: pctNow, at: Date.now(), amount: null }; store.set('refill', refill);
+    toast(`${isEV() ? '충전' : '주유'} 감지: ${Math.round(last)}% → ${Math.round(pctNow)}%`);
+  }
+  store.set(key, pctNow);
+}
+function watchCharging(on) {
+  if (live.charging === on) return;
+  if (on) chargeStart = live.evSoc;
+  else if (live.charging === true && !refill) {
+    refill = { from: chargeStart ?? live.evSoc ?? 0, to: live.evSoc ?? 0, at: Date.now(), amount: null }; store.set('refill', refill);
+    toast('충전이 끝났어요');
+  }
+  live.charging = on;
+}
+
+// ── 갈 곳 찾기 ──
+function seg(id, items, get, set) {
+  $(id).innerHTML = items.map(([v, label]) => `<button data-v="${v}" class="${get(v) ? 'on' : ''}">${label}</button>`).join('');
+  $(id).onclick = (e) => { const v = e.target.closest('[data-v]')?.dataset.v; if (v == null) return; set(v); ui.shown = []; ui.swapped = []; renderFind(); };
+}
+function renderFind() {
+  const b = balance();
+  seg('extraSeg', [[0, '추가 0원'], [10000, '+1만'], [30000, '+3만']], (v) => +v === ui.extra, (v) => { ui.extra = +v; });
+  seg('daySeg', [['day', '당일'], ['night', '1박']], (v) => v === ui.day, (v) => { ui.day = v; });
+  seg('themeSeg', THEMES.map((t) => [t.id, t.name]), (v) => ui.themes.includes(v), (v) => {
+    if (ui.themes.includes(v)) ui.themes = ui.themes.filter((x) => x !== v);
+    else ui.themes = [...ui.themes, v].slice(-2);
+  });
+  seg('sortSeg', [['rec', '추천순'], ['cost', '비용순']], (v) => v === ui.sort, (v) => { ui.sort = v; });
+  $('useRest').checked = ui.rest;
+  let sc = scope(b), list = ranked(b, sc), notice = '';
+  // 추가 0원 범위가 없으면 +1만부터 (PRD 6-2 예외 처리)
+  if (b.pct != null && ui.extra === 0 && !list.length) {
+    const before = ui.extra;
+    for (const x of [10000, 30000]) { ui.extra = x; sc = scope(b); list = ranked(b, sc); if (list.length) break; }
+    if (list.length) { notice = `추가 0원 범위에 후보가 없어요. ${ui.extra === 10000 ? '+1만' : '+3만'} 원부터 볼게요.`; seg('extraSeg', [[0, '추가 0원'], [10000, '+1만'], [30000, '+3만']], (v) => +v === ui.extra, (v) => { ui.extra = +v; }); }
+    else ui.extra = before;
+  }
+  const n = people();
+  $('scope').innerHTML = `${b.tankName} 잔고 <b>${won(b.won)}</b> · ${km(b.dist)}<br>안전 여유 ${km(b.margin)}${ui.extra ? ` · 추가 ${won(ui.extra)} = +${km(sc.extraKm)}` : ''}${ui.day === 'night' ? ` · 현지 이동 ${NIGHT_LOCAL}km` : ''}<br>왕복 <b>${km(sc.rt)}</b> · 반경 약 <b>${km(sc.radius)}</b><br>인원 <b>${n}명</b>${n > 1 ? ' · 1인 몫으로 표시' : ''} · 후보 ${list.length}곳`;
+  const count = +settings.count;
+  if (list.length && list.length < 3) notice = notice || `범위 안 후보가 ${list.length}곳뿐이에요. 테마를 풀거나 +1만 원 범위를 보세요.`;
+  // 이미 보던 카드는 유지하고(교체한 카드 포함), 범위가 바뀌면 다시 고른다
+  const valid = ui.shown.map((name) => list.find((x) => x.p.name === name)).filter(Boolean);
+  const cards = valid.length === Math.min(count, list.length) ? valid : pick(list, count);
+  ui.shown = cards.map((x) => x.p.name);
+  $('deckNotice').innerHTML = notice ? `<div class="notice">${notice}</div>` : '';
+  $('deckArt').innerHTML = art(ui.themes[0] || cards[0]?.p.theme || 'drive', 7);
+  $('cards').innerHTML = !cards.length ? `<div class="notice">${b.pct == null ? '차량 값을 읽는 중이에요…' : '이 조건에 맞는 후보가 없어요. 테마를 풀거나 더 쓸 돈을 늘려 보세요.'}</div>`
+    : cards.map((x, i) => {
+      const { p, c } = x;
+      const extra = c.extraWon > 0 ? `<span class="need">추가 ${b.energyName} ${won(c.extraWon)}</span>` : `<span class="ok">추가 ${b.energyName} 0</span>`;
+      return `<article class="place" data-name="${p.name}">
+        <div class="art">${art(p.theme, i + 1)}</div>
+        <div class="body">
+          <div><h3>${p.name}</h3><div class="tag">${themeName(p.theme)} · 편도 ${km(c.one)}</div></div>
+          <div class="line">왕복 <b>${won(c.total)}</b> · ${extra}${n > 1 ? ` · 1인 <b>${won(c.total / n)}</b>` : ''} · ${dur(c.minutes)}</div>
+          <div class="split">${b.energyName === '충전' ? '전기' : '연료'} ${won(c.energy)} (${c.rt.toFixed(0)}km ÷ ${b.eff.toFixed(1)} × ${b.unit.toLocaleString('ko-KR')}원)<br>
+            통행료 ${won(c.toll)} (왕복, 추정) · 주차 ${c.parking ? won(c.parking) : '무료/정보 없음'}<br>= <b>${won(c.total)}</b>${n > 1 ? ` · ${n}명이면 1인 ${won(c.total / n)}` : ''}</div>
+          <div class="btns"><button data-act="split">비용 분해</button><button data-act="swap">교체</button><button class="go filled" data-act="go">출발</button></div>
+        </div></article>`;
+    }).join('');
+}
+$('cards').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const el = btn.closest('.place'), name = el.dataset.name;
+  if (btn.dataset.act === 'split') el.classList.toggle('open');
+  else if (btn.dataset.act === 'swap') {
+    const b = balance(), list = ranked(b, scope(b));
+    const next = list.find((x) => !ui.shown.includes(x.p.name) && !(ui.swapped || []).includes(x.p.name));
+    if (!next) return toast('바꿀 후보가 더 없어요');
+    ui.swapped = [...(ui.swapped || []), name];
+    ui.shown = ui.shown.map((s) => (s === name ? next.p.name : s));
+    renderFind();
+  } else depart(PLACES.find((p) => p.name === name));
+});
+$('useRest').addEventListener('change', (e) => { ui.rest = e.target.checked; });
+
+// ── F8 내비 전달 ──
+function restStop(p) {
+  const direct = haversine(live.origin, p);
+  const best = REST_AREAS.map((r) => ({ r, detour: haversine(live.origin, r) + haversine(r, p) - direct, from: haversine(live.origin, r) }))
+    .filter((x) => x.from > 8 && x.detour < 8).sort((a, b) => a.detour - b.detour)[0];
+  return best?.r;
+}
+function depart(p) {
+  if (!cc) return toast('앱 밖에서는 내비를 부를 수 없어요');
+  if (live.ux) return toast('주행 중에는 고를 수 없어요');
+  const b = balance(), c = costOf(p, b), n = people();
+  const rest = ui.rest ? restStop(p) : null;
+  const trip = { name: p.name, theme: p.theme, lat: p.lat, lng: p.lng, startPct: b.pct, ev: b.ev, capacity: b.capacity, unit: b.unit, eff: b.eff,
+    est: { energy: c.energy / 2, toll: p.toll, parking: p.parking, one: c.one }, people: n, at: Date.now(), rest: rest?.name || null };
+  store.set('trip', trip); live.nav = {};
+  if (rest) cc.requestRouteWithWaypoints(p.lat, p.lng, p.name, 'RECOMMENDED', JSON.stringify([{ lat: rest.lat, lng: rest.lng, name: rest.name }]));
+  else cc.requestRoute(p.lat, p.lng, p.name, 'RECOMMENDED');
+  toast(`${p.name}${rest ? ` (${rest.name} 경유)` : ''}로 안내를 요청했어요`);
+  showTab('home');
+}
+
+// ── 진행 중 여행 / F10 도착 기록 ──
+function renderTrip() {
+  const trip = store.get('trip', null), el = $('tripCard');
+  if (!trip) { el.hidden = true; return; }
+  el.hidden = false;
+  const nav = live.nav;
+  el.innerHTML = `<h2>${trip.name}로 가는 중${trip.rest ? ` <small class="muted">(${trip.rest} 경유)</small>` : ''}</h2>
+    <div class="kv"><span>남은 거리 <b>${nav.remainDistance != null ? km(nav.remainDistance / 1000) : '내비 정보 기다리는 중'}</b></span>
+    ${nav.remainTime != null ? `<span>남은 시간 <b>${dur(nav.remainTime / 60)}</b></span>` : ''}
+    <span>통행료 <b>${nav.tollFare != null ? won(nav.tollFare) + ' (내비)' : won(trip.est.toll) + ' (추정)'}</b></span></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="on" id="arriveBtn">도착 처리 (에뮬 모의주행 대신)</button><button class="ghost" id="cancelTrip">여행 취소</button></div>`;
+  $('arriveBtn').onclick = () => finishTrip(null);
+  $('cancelTrip').onclick = () => { store.set('trip', null); cc?.cancelRoute(); renderHome(); };
+}
+// 실제 든 돈 = 잔량 변화 × 용량 × 단가 + 통행료(내비 값, 없으면 추정). 에뮬에서는 잔량이 줄지 않아 추정치를 쓴다.
+function finishTrip(arrived) {
+  const trip = store.get('trip', null); if (!trip) return;
+  const b = balance();
+  const usedPct = trip.startPct != null && b.pct != null ? trip.startPct - b.pct : 0;
+  const measured = usedPct > 0.5;
+  const energy = measured ? usedPct / 100 * trip.capacity * trip.unit : trip.est.energy;
+  const toll = live.nav.tollFare ?? trip.est.toll;
+  const rec = { name: trip.name, theme: trip.theme, lat: trip.lat, lng: trip.lng, at: Date.now(), energy, toll, total: energy + toll,
+    measured, tollFromNavi: live.nav.tollFare != null, people: trip.people, distance: arrived?.distance ? arrived.distance / 1000 : trip.est.one };
+  store.set('records', [rec, ...store.get('records', [])]);
+  store.set('trip', null);
+  toast(`${trip.name} 도착 · 실제 ${won(rec.total)}${measured ? '' : ' (추정)'} 기록했어요`);
+  renderHome(); renderLog();
+}
+
+// ── 여행 기록 지도 ──
+const BOX = { lat0: 35.6, lat1: 38.4, lng0: 126.2, lng1: 129.4 };
+const proj = (lat, lng) => [(lng - BOX.lng0) / (BOX.lng1 - BOX.lng0) * 600, (BOX.lat1 - lat) / (BOX.lat1 - BOX.lat0) * 520];
+const CITIES = [['서울', 37.5665, 126.978], ['인천', 37.4563, 126.7052], ['춘천', 37.8813, 127.7298], ['강릉', 37.7519, 128.8761], ['대전', 36.3504, 127.3845], ['청주', 36.6424, 127.489], ['원주', 37.3422, 127.9202], ['대구', 35.8714, 128.6014], ['전주', 35.8242, 127.148]];
+function renderLog() {
+  const recs = store.get('records', []);
+  const total = recs.reduce((s, r) => s + r.total, 0);
+  $('logSum').textContent = `다녀온 곳 ${recs.length}곳 · ${won(total)}`;
+  const grid = [36, 37, 38].map((lat) => { const [, y] = proj(lat, 127); return `<line x1="0" x2="600" y1="${y}" y2="${y}" stroke="#16213f"/><text x="6" y="${y - 4}" fill="#3a4a73" font-size="11">${lat}°N</text>`; }).join('')
+    + [127, 128, 129].map((lng) => { const [x] = proj(37, lng); return `<line y1="0" y2="520" x1="${x}" x2="${x}" stroke="#16213f"/>`; }).join('');
+  const cities = CITIES.map(([n, lat, lng]) => { const [x, y] = proj(lat, lng); return `<circle cx="${x}" cy="${y}" r="3" fill="#3a4a73"/><text x="${x + 6}" y="${y + 4}" fill="#5b6c96" font-size="12">${n}</text>`; }).join('');
+  const [ox, oy] = proj(live.origin.lat, live.origin.lng);
+  const pins = recs.map((r) => { const [x, y] = proj(r.lat, r.lng); const c = (THEMES.find((t) => t.id === r.theme) || THEMES[0]).c[1];
+    return `<line x1="${ox}" y1="${oy}" x2="${x}" y2="${y}" stroke="${c}" stroke-opacity=".25" stroke-dasharray="4 4"/><path d="M${x} ${y} l-8 -16 a9 9 0 1 1 16 0z" fill="${c}"/><text x="${x + 10}" y="${y - 10}" fill="#fff" font-size="12">${r.name}</text>`; }).join('');
+  $('map').innerHTML = grid + cities + pins + `<circle cx="${ox}" cy="${oy}" r="7" fill="#3ddc84"/><text x="${ox + 10}" y="${oy + 16}" fill="#3ddc84" font-size="12">출발 (${live.origin.name || '현재 위치'})</text>`;
+  $('recList').innerHTML = recs.length ? recs.map((r, i) => `<div class="rec"><div><b>${r.name}</b> <span class="muted">${new Date(r.at).toLocaleDateString('ko-KR')}</span><br>
+    <span class="muted">${r.measured ? '' : '추정 '}에너지 ${won(r.energy)} + 통행료 ${won(r.toll)}${r.tollFromNavi ? '(내비)' : '(추정)'}${r.people > 1 ? ` · 1인 ${won(r.total / r.people)}` : ''}</span></div>
+    <div style="text-align:right"><b>${won(r.total)}</b><br><button data-del="${i}">지우기</button></div></div>`).join('') : '<div class="muted">아직 기록이 없어요. 추천 카드에서 출발하고 도착하면 여기에 쌓여요.</div>';
+}
+$('recList').addEventListener('click', (e) => { const i = e.target.dataset.del; if (i == null) return; const r = store.get('records', []); r.splice(+i, 1); store.set('records', r); renderLog(); });
+$('demoRecords').addEventListener('click', () => {
+  const b = balance(), recs = store.get('records', []), day = 86400000;
+  ['양평 두물머리', '강릉 경포해변', '가평 남이섬'].forEach((name, i) => {
+    const p = PLACES.find((x) => x.name === name), c = costOf(p, b);
+    recs.push({ name, theme: p.theme, lat: p.lat, lng: p.lng, at: Date.now() - (i + 1) * 7 * day, energy: c.energy / 2, toll: p.toll, total: c.energy / 2 + p.toll, measured: false, tollFromNavi: false, people: i + 1, distance: c.one });
+  });
+  store.set('records', recs); renderLog();
+});
+
+// ── 설정 ──
+$('sCar').innerHTML = CARS.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+const SET = { sCar: 'car', sMode: 'mode', sMockFuel: 'mockFuel', sGas: 'gas', sHome: 'home', sFast: 'fast', sSource: 'source', sMargin: 'margin', sCount: 'count', sCommute: 'commute', sPeople: 'people' };
+for (const [id, key] of Object.entries(SET)) {
+  $(id).value = settings[key];
+  $(id).addEventListener('change', () => {
+    settings[key] = $(id).value; store.set('settings', settings);
+    if (key === 'mockFuel' && !isEV()) watchRefill(+settings.mockFuel); // 모의 연료를 올리면 주유로 감지 (내연 시연)
+    ui.shown = []; renderAll();
+  });
+}
+$('clearAll').addEventListener('click', () => { store.set('records', []); store.set('trip', null); store.set('refill', null); refill = null; renderAll(); toast('기록을 지웠어요'); });
+
+// ── 탭 ──
+function showTab(t) {
+  document.querySelectorAll('nav button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  document.querySelectorAll('main > section').forEach((s) => { s.hidden = s.id !== `tab-${t}`; });
+  store.set('tab', t); renderAll();
+}
+document.querySelector('nav').addEventListener('click', (e) => { const t = e.target.closest('[data-tab]'); if (t) showTab(t.dataset.tab); });
+document.addEventListener('click', (e) => { const g = e.target.closest('[data-goto]'); if (g) showTab(g.dataset.goto); });
+
+// ── 주행 규제: 정차 전용 화면을 숨기고 3줄 카드만 ──
+function renderDrive() {
+  document.body.classList.toggle('driving', !!live.ux);
+  if (!live.ux) return;
+  const trip = store.get('trip', null), b = balance(), nav = live.nav;
+  const remain = nav.remainDistance != null ? nav.remainDistance / 1000 : trip?.est.one;
+  $('driveCard').innerHTML = trip
+    ? `<div>${trip.name}</div><div>남은 거리 ${remain != null ? km(remain) : '—'}</div><div>${remain != null && remain * 2 + b.margin > b.dist ? `돌아올 때 ${b.energyName} 필요` : `추가 ${b.energyName} 없음`}</div>`
+    : `<div>주행 중</div><div>차곡은 정차 중에만 열려요</div><div>${b.tankName} ${won(b.won)} · ${km(b.dist)}</div>`;
+}
+
+let renderQueued = false;
+function renderAll() {
+  if (renderQueued) return; renderQueued = true;
+  requestAnimationFrame(() => {
+    renderQueued = false;
+    const t = store.get('tab', 'home');
+    if (t === 'home') renderHome(); else if (t === 'find') renderFind(); else if (t === 'log') renderLog();
+    $('cGear').textContent = live.gear ? String(live.gear).replace('GEAR_', '') : '—';
+    $('cPeople').textContent = `${people()}명`;
+    $('cLoc').textContent = live.locFromNavi ? '내비' : '고정';
+    renderDrive();
+  });
+}
+
+// ── 브리지 메시지 ──
+const SEAT_KEYS = ['seat.ROW_1_LEFT', 'seat.ROW_1_RIGHT', 'seat.ROW_2_LEFT', 'seat.ROW_2_RIGHT'];
+const sig = {}; // 바뀐 값만 다시 그린다
+window.onChagok = (m) => {
+  if (m.type === 'value' || m.type === 'error') {
+    const v = m.type === 'value' ? m.value : null;
+    if (sig[m.key] === JSON.stringify(v)) return;
+    sig[m.key] = JSON.stringify(v);
+    if (SEAT_KEYS.includes(m.key)) live.seats[m.key] = v === true;
+    else if (m.key === 'uxRestricted') live.ux = v === true;
+    else if (m.key === 'evCharging') { if (v != null) watchCharging(v); }
+    else if (m.key in live) live[m.key] = v;
+    if (m.key === 'evSoc' || (m.key === 'fuelPercent' && v != null)) watchRefill(v);
+    renderAll();
+  } else if (m.type === 'navi') {
+    const d = m.data;
+    if (m.event === 'currentLocation' && d?.latitude) {
+      live.origin = { lat: d.latitude, lng: d.longitude, name: d.address?.split(' ').slice(-2).join(' ') || '현재 위치' };
+      if (!live.locFromNavi) { live.locFromNavi = true; renderAll(); }
+    } else if (m.event === 'destination' && d) {
+      live.nav = { remainDistance: d.remainDistance, remainTime: d.remainTime, tollFare: d.tollFare }; renderAll();
+    } else if (m.event === 'destinationArrived') finishTrip(d);
+    else if (m.event === 'routeCancelled' && store.get('trip', null)) toast('내비 안내가 취소됐어요 (여행은 남겨 둘게요)');
+  }
+};
+
+if (!cc) {
+  toast('앱 밖에서는 차량 값을 읽을 수 없어요 (데모값으로 보여요)');
+  live.evSoc = 72; live.gear = 'GEAR_PARK';
+} else {
+  cc.readAll();
+  setTimeout(() => cc.readNavi(), 800);
+  setInterval(() => cc.readAll(), 2000);
+  setInterval(() => { if (store.get('trip', null) || !live.locFromNavi) cc.readNavi(); }, 10000);
+}
+showTab(store.get('tab', 'home'));
+</script>
+</body>
+</html>
