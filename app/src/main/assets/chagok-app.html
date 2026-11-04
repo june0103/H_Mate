@@ -60,7 +60,7 @@
   .chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--surface-high);color:var(--text-tertiary)}
   .chip b{color:var(--text-primary)}
   nav{display:flex;gap:4px;padding:12px 24px 0;overflow-x:auto}
-  nav button{background:transparent;color:var(--text-tertiary);border-radius:calc(24*var(--u)) calc(24*var(--u)) 0 0;min-height:64px;padding:0 calc(36*var(--u));font-size:calc(28*var(--u))}
+  nav button{white-space:nowrap;flex-shrink:0;background:transparent;color:var(--text-tertiary);border-radius:calc(24*var(--u)) calc(24*var(--u)) 0 0;min-height:64px;padding:0 calc(36*var(--u));font-size:calc(28*var(--u))}
   nav button svg{width:calc(40*var(--u));height:calc(40*var(--u))}
   nav button[aria-selected="true"]{background:var(--bg-primary);color:var(--text-primary);font-weight:700}
   main{margin:0 24px 24px;padding:22px;border-radius:0 calc(32*var(--u)) calc(32*var(--u)) calc(32*var(--u));background:var(--bg-primary);box-sizing:border-box}
@@ -136,6 +136,9 @@
   @media (max-width: 900px){
     .grid2,.find,.form{grid-template-columns:1fr}
     .chips{margin-left:0}
+    header,nav{padding-left:16px;padding-right:16px}
+    main{margin:0 16px 16px;padding:16px}
+    nav button{padding:0 calc(24*var(--u))}
     main{border-radius:0 0 calc(32*var(--u)) calc(32*var(--u))}
   }
 </style>
