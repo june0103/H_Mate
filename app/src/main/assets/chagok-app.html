@@ -126,6 +126,12 @@
   #drive .card div:first-child{font-size:calc(30*var(--u));line-height:calc(38*var(--u));color:var(--text-tertiary);font-weight:600}
   #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);padding:12px 22px;border-radius:999px;background:var(--bg-popup);color:var(--text-primary);font-size:calc(24*var(--u));opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.35)}
   #toast.show{opacity:1}
+  #picker{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:24px}
+  #picker[hidden]{display:none}
+  #picker .card{width:min(520px,100%);box-sizing:border-box;background:var(--bg-popup)}
+  #pickerList{display:grid;gap:8px}
+  #pickerList button{justify-content:space-between;min-height:64px}
+  #pickerList button span{font-weight:400;font-size:calc(24*var(--u))}
   /* Window Policy: 1:1 분할·세로(portrait) 창에서도 쓸 수 있게 */
   @media (max-width: 900px){
     .grid2,.find,.form{grid-template-columns:1fr}
@@ -234,6 +240,12 @@
 
 <div id="drive"><div class="card" id="driveCard"></div></div>
 <div id="toast"></div>
+<!-- F8 경유지: 출발할 때 휴게소를 고른다 (최대 2곳 중 1곳 사용) -->
+<div id="picker" hidden><div class="card">
+  <h2 id="pickerTitle">들를 휴게소</h2>
+  <div id="pickerList"></div>
+  <button class="ghost" id="pickerClose" style="margin-top:12px;width:100%">취소</button>
+</div></div>
 
 <script src="chagok/data.js"></script>
 <script>
@@ -506,17 +518,31 @@ $('cards').addEventListener('click', (e) => {
 $('useRest').addEventListener('change', (e) => { ui.rest = e.target.checked; });
 
 // ── F8 내비 전달 ──
-function restStop(p) {
+// 휴게소 후보: 더 돌아가는 거리(도로 기준 추정)가 짧은 순으로 3곳. 출발할 때 사용자가 고른다
+function restCandidates(p) {
   const direct = haversine(live.origin, p);
-  const best = REST_AREAS.map((r) => ({ r, detour: haversine(live.origin, r) + haversine(r, p) - direct, from: haversine(live.origin, r) }))
-    .filter((x) => x.from > 8 && x.detour < 8).sort((a, b) => a.detour - b.detour)[0];
-  return best?.r;
+  return REST_AREAS.map((r) => ({ r, detour: (haversine(live.origin, r) + haversine(r, p) - direct) * ROAD }))
+    .sort((a, b) => a.detour - b.detour).slice(0, 3);
 }
-function depart(p) {
+function pickRest(p) {
+  const list = restCandidates(p);
+  $('pickerTitle').textContent = `${p.name} 가는 길에 들를 휴게소`;
+  $('pickerList').innerHTML = list.map((x, i) => `<button data-rest="${i}">${x.r.name}<span class="muted">${x.detour < 1 ? '거의 그대로' : `+${km(x.detour)} 더`}</span></button>`).join('')
+    + '<button class="ghost" data-rest="none">휴게소 없이 출발</button>';
+  $('pickerList').onclick = (e) => {
+    const v = e.target.closest('[data-rest]')?.dataset.rest; if (v == null) return;
+    $('picker').hidden = true;
+    depart(p, v === 'none' ? null : list[+v].r);
+  };
+  $('picker').hidden = false;
+}
+$('pickerClose').addEventListener('click', () => { $('picker').hidden = true; });
+function depart(p, rest) {
   if (!cc) return toast('앱 밖에서는 내비를 부를 수 없어요');
   if (live.ux) return toast('주행 중에는 고를 수 없어요');
+  if (ui.rest && rest === undefined) return pickRest(p);
+  rest = rest || null;
   const b = balance(), c = costOf(p, b), n = people();
-  const rest = ui.rest ? restStop(p) : null;
   const trip = { name: p.name, theme: p.theme, lat: p.lat, lng: p.lng, startPct: b.pct, ev: b.ev, capacity: b.capacity, unit: b.unit, eff: b.eff,
     est: { energy: c.energy / 2, toll: p.toll, parking: p.parking, one: c.one }, people: n, at: Date.now(), rest: rest?.name || null };
   store.set('trip', trip); live.nav = {};
