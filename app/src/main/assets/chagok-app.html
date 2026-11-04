@@ -314,13 +314,39 @@ function scope(b, extra = ui.extra, day = ui.day) {
   return { extraKm, rt, radius: rt / 2 / ROAD };
 }
 function people() { if (+settings.people) return +settings.people; const n = Object.values(live.seats).filter(Boolean).length; return Math.max(1, n); }
-// 후보지 하나의 비용 (왕복). 잔고 안이면 추가 주유·충전 0
+// 내비로 확인한 경로(onRouteStarted의 도로 거리·시간·통행료). 출발 위치가 3km 넘게 바뀌면 다시 추정값을 쓴다
+function naviRoute(p) {
+  const r = store.get('naviRoutes', {})[p.name];
+  return r && haversine(r.origin, live.origin) <= 3 ? r : null;
+}
+// 후보지 하나의 비용 (왕복). 잔고 안이면 추가 주유·충전 0. 돌아오는 길은 가는 길과 같다고 본다
 function costOf(p, b) {
-  const one = roadKm(live.origin, p), rt = one * 2;
+  const nr = naviRoute(p);
+  const one = nr ? nr.distance / 1000 : roadKm(live.origin, p), rt = one * 2;
+  const tollOne = nr ? nr.toll : p.toll;
   const energy = rt / b.eff * b.unit;
-  const total = energy + p.toll * 2 + p.parking;
+  const total = energy + tollOne * 2 + p.parking;
   const needKm = Math.max(0, rt + b.margin - b.dist);
-  return { one, rt, energy, toll: p.toll * 2, parking: p.parking, total, extraWon: needKm / b.eff * b.unit, minutes: one / SPEED * 60 };
+  return { one, rt, energy, toll: tollOne * 2, parking: p.parking, total, extraWon: needKm / b.eff * b.unit,
+    minutes: nr ? nr.duration / 60 : one / SPEED * 60, fromNavi: !!nr };
+}
+// 카드 경로를 순정 내비로 한 곳씩 확인: 경로 요청 → onRouteStarted 값(probeRoute) 저장 → 브리지가 안내 취소.
+// 내비가 앞에 나온 채로 남고, 앱이 스스로 앞으로 돌아올 수 없어(백그라운드 실행 제한) 사용자가 차곡 아이콘으로 돌아온다
+let probing = 0;
+// 경로를 받은 뒤 내비가 아직 안내 중이면(앱이 뒤에 있는 동안 취소가 안 닿음) 돌아왔을 때 다시 취소한다
+let probeCancel = false;
+document.addEventListener('visibilitychange', () => { if (!document.hidden && probeCancel && cc) cc.readNavi(); });
+function checkRoutes(names) {
+  if (!cc) return toast('앱 밖에서는 내비를 부를 수 없어요');
+  if (store.get('trip', null)) return toast('안내 중인 여행이 있어 확인할 수 없어요');
+  if (probing) return toast('경로를 확인하는 중이에요');
+  probing = names.length;
+  cc.probeRoutes(JSON.stringify(names.map((n) => PLACES.find((p) => p.name === n)).map((p) => ({ lat: p.lat, lng: p.lng, name: p.name }))));
+}
+function saveRoute(name, d) {
+  const routes = store.get('naviRoutes', {});
+  routes[name] = { distance: d.distance, duration: d.duration, toll: d.tollFare, origin: { ...live.origin }, at: Date.now() };
+  store.set('naviRoutes', routes);
 }
 function bearingSector(p) { const a = Math.atan2(p.lng - live.origin.lng, p.lat - live.origin.lat); return Math.round((a + Math.PI) / (Math.PI / 4)) % 8; }
 const visited = () => new Set(store.get('records', []).map((r) => r.name));
@@ -497,10 +523,11 @@ function renderFind() {
       return `<article class="place" data-name="${p.name}">
         <div class="art">${art(p.theme, i + 1)}</div>
         <div class="body">
-          <div><h3>${p.name}</h3><div class="tag">${themeName(p.theme)} · 편도 ${km(c.one)}</div></div>
+          <div><h3>${p.name}</h3><div class="tag">${themeName(p.theme)} · 편도 ${km(c.one)} <span style="color:${c.fromNavi ? 'var(--positive)' : 'inherit'}">${c.fromNavi ? '(내비 경로)' : '(추정)'}</span></div></div>
           <div class="line">왕복 <b>${won(c.total)}</b> · ${extra}${n > 1 ? ` · 1인 <b>${won(c.total / n)}</b>` : ''} · ${dur(c.minutes)}</div>
-          <div class="split">${b.energyName === '충전' ? '전기' : '연료'} ${won(c.energy)} (${c.rt.toFixed(0)}km ÷ ${b.eff.toFixed(1)} × ${b.unit.toLocaleString('ko-KR')}원)<br>
-            통행료 ${won(c.toll)} (왕복, 추정) · 주차 ${c.parking ? won(c.parking) : '무료/정보 없음'}<br>= <b>${won(c.total)}</b>${n > 1 ? ` · ${n}명이면 1인 ${won(c.total / n)}` : ''}</div>
+          <div class="split">${b.energyName === '충전' ? '전기' : '연료'} ${won(c.energy)} (왕복 ${c.rt.toFixed(0)}km ÷ ${b.eff.toFixed(1)} × ${b.unit.toLocaleString('ko-KR')}원)<br>
+            통행료 ${won(c.toll)} (왕복, ${c.fromNavi ? '내비 편도 × 2' : '추정'}) · 주차 ${c.parking ? won(c.parking) : '무료/정보 없음'}<br>= <b>${won(c.total)}</b>${n > 1 ? ` · ${n}명이면 1인 ${won(c.total / n)}` : ''}
+            ${c.fromNavi ? '' : `<br><button data-act="check" style="margin-top:8px;width:100%">내비 경로로 확인</button><br><span class="label-s">내비가 열려 경로를 받아 와요. 안내가 남아 있으면 내비의 "안내 종료"를 누르고 차곡 아이콘으로 돌아오세요.</span>`}</div>
           <div class="btns"><button data-act="split">비용 분해</button><button data-act="swap">교체</button><button class="go filled" data-act="go">출발</button></div>
         </div></article>`;
     }).join('');
@@ -509,6 +536,7 @@ $('cards').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-act]'); if (!btn) return;
   const el = btn.closest('.place'), name = el.dataset.name;
   if (btn.dataset.act === 'split') el.classList.toggle('open');
+  else if (btn.dataset.act === 'check') checkRoutes([name]);
   else if (btn.dataset.act === 'swap') {
     const b = balance(), list = ranked(b, scope(b));
     const next = list.find((x) => !ui.shown.includes(x.p.name) && !(ui.swapped || []).includes(x.p.name));
@@ -519,7 +547,6 @@ $('cards').addEventListener('click', (e) => {
   } else depart(PLACES.find((p) => p.name === name));
 });
 $('useRest').addEventListener('change', (e) => { ui.rest = e.target.checked; });
-
 // ── F8 내비 전달 ──
 // 휴게소 후보: 가는 경로 위(출발지와 목적지 사이, 더 돌아가는 거리 8km 이하)에 있는 곳만, 짧은 순으로 최대 3곳
 const REST_MAX_DETOUR = 8;
@@ -685,7 +712,15 @@ window.onChagok = (m) => {
       if (!live.locFromNavi) { live.locFromNavi = true; renderAll(); }
     } else if (m.event === 'destination' && d) {
       live.nav = { remainDistance: d.remainDistance, remainTime: d.remainTime, tollFare: d.tollFare }; renderAll();
-    } else if (m.event === 'destinationArrived') finishTrip(d);
+    } else if (m.event === 'probeRoute') { saveRoute(d.name, d.route); probing = Math.max(0, probing - 1); probeCancel = true; renderAll(); }
+    else if (m.event === 'routeState' && probeCancel && d?.naviMode === 'ROUTE_GUIDING' && !store.get('trip', null)) cc.cancelRoute();
+    else if ((m.event === 'routeEnded' || m.event === 'routeCancelled') && probeCancel) probeCancel = false;
+    else if (m.event === 'probeFailed') { probing = Math.max(0, probing - 1); toast(`${d} 경로를 받지 못했어요`); }
+    else if (m.event === 'probeDone') { probing = 0; renderAll(); }
+    else if (m.event === 'routeStarted' && d && !probing && store.get('trip', null)?.name === d.name && !store.get('trip').rest) {
+      saveRoute(d.name, d); // 실제 출발한 경로 값도 다음 추천에 쓴다 (경유지가 있으면 첫 구간 값이라 저장하지 않음)
+    }
+    else if (m.event === 'destinationArrived') finishTrip(d);
     else if (m.event === 'routeCancelled' && store.get('trip', null)) toast('내비 안내가 취소됐어요 (여행은 남겨 둘게요)');
   }
 };
