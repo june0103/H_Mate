@@ -132,6 +132,34 @@
   #pickerList{display:grid;gap:8px}
   #pickerList button{justify-content:space-between;min-height:64px}
   #pickerList button span{font-weight:400;font-size:calc(24*var(--u))}
+  /* ── PRD v1.2 탭 ── */
+  #tab-v12{position:relative}
+  .demo-mark{position:absolute;top:0;right:0;padding:4px 12px;border-radius:999px;background:var(--surface-high);color:var(--text-tertiary);font-size:calc(20*var(--u));line-height:calc(24*var(--u))}
+  .settle{box-shadow:inset 0 0 0 2px var(--active)}
+  .settle .head{font-size:calc(30*var(--u));line-height:calc(38*var(--u));font-weight:700}
+  .one-wrap{position:relative;padding:0 0 26px}
+  .one-back{position:absolute;left:0;right:0;bottom:0;height:60px;border-radius:calc(32*var(--u));background:var(--surface-accent)}
+  .one-back.b2{left:14px;right:14px;bottom:13px;opacity:.7}
+  .one-back.b3{left:28px;right:28px;bottom:26px;opacity:.5}
+  .one-back.b1{left:42px;right:42px;bottom:0;opacity:.35}
+  .one{position:relative;border-radius:calc(32*var(--u));overflow:hidden;background:var(--surface-high);margin:0 0 0}
+  .one .art{height:180px;position:relative}
+  .one .art svg{width:100%;height:100%;display:block}
+  .one .pill{position:absolute;left:14px;top:14px;padding:4px 12px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:calc(22*var(--u))}
+  .one .body{padding:18px 20px;display:grid;gap:10px}
+  .one .meta{color:var(--text-tertiary);font-size:calc(26*var(--u))}
+  .one .meta b{color:var(--text-primary)}
+  .badge{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;font-weight:700;font-size:calc(26*var(--u))}
+  .badge.ok{background:rgba(0,224,116,.14);color:var(--active)}
+  .badge.tight{background:rgba(255,76,40,.14);color:var(--negative)}
+  .badge.extra{background:rgba(0,130,255,.14);color:var(--positive)}
+  .reason{color:var(--text-secondary);font-size:calc(26*var(--u))}
+  .reason::before{content:"이유 · ";color:var(--text-tertiary)}
+  .one .split{display:none;padding:12px 14px;border-radius:calc(20*var(--u));background:var(--surface-low);color:var(--text-tertiary);font-size:calc(24*var(--u));line-height:calc(32*var(--u))}
+  .one.open .split{display:block}
+  .one .btns{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px}
+  .stack-label{margin-top:8px;text-align:center;color:var(--text-tertiary);font-size:calc(22*var(--u))}
+  .mini-map{width:100%;height:auto;aspect-ratio:600/360;border-radius:calc(24*var(--u));background:var(--surface-low);margin-top:10px}
   /* Window Policy: 1:1 분할·세로(portrait) 창에서도 쓸 수 있게 */
   @media (max-width: 900px){
     .grid2,.find,.form{grid-template-columns:1fr}
@@ -160,6 +188,7 @@
   <button role="tab" data-tab="home" aria-selected="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M8 22 24 9l16 13v17H29V28h-10v11H8z"/></svg>홈</button>
   <button role="tab" data-tab="find" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><circle cx="24" cy="24" r="16"/><path d="m30 18-4 8-8 4 4-8z"/></svg>갈 곳 찾기</button>
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M24 42s13-12.5 13-22a13 13 0 0 0-26 0c0 9.5 13 22 13 22z"/><circle cx="24" cy="20" r="4.5"/></svg>여행 기록</button>
+  <button role="tab" data-tab="v12" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><rect x="12" y="8" width="24" height="32" rx="4"/><path d="M8 14v24M40 14v24"/></svg>한 장 (v1.2)</button>
   <button role="tab" data-tab="settings" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M10 14h28M10 24h28M10 34h28"/><circle cx="30" cy="14" r="3.5" fill="currentColor"/><circle cx="18" cy="24" r="3.5" fill="currentColor"/><circle cx="26" cy="34" r="3.5" fill="currentColor"/></svg>설정</button>
 </nav>
 <main>
@@ -219,6 +248,38 @@
     </div>
   </section>
 
+  <!-- PRD v1.2: 잔고(주행가능거리 1순위) · F10 시동 정산 · F9 충전 직후 · F5 한 장 + 스택 · F17 이달 이동비 -->
+  <section id="tab-v12" hidden>
+    <span class="demo-mark" id="v12Demo" hidden>시연용 값</span>
+    <div class="grid2">
+      <div class="stack" style="align-content:start">
+        <div class="card settle" id="v12Settle" hidden></div>
+        <div class="card refill" id="v12Refill" hidden></div>
+        <div class="card balance">
+          <div class="muted" id="v12BalTitle">잔고</div>
+          <div class="big headline-s" id="v12Bal">—</div>
+          <div class="kv" id="v12Kv"></div>
+        </div>
+        <div class="card" id="v12Trip" hidden></div>
+        <div class="card">
+          <h2 id="v12Month">이번 달 이동비</h2>
+          <div class="muted small">앱을 열 때 지난번 이후 주행거리로 정산해 쌓아요. 따로 적지 않아도 돼요.</div>
+          <svg class="mini-map" id="v12Map" viewBox="0 0 600 360" aria-label="다녀온 곳 지도"></svg>
+          <div id="v12Ledger"></div>
+        </div>
+      </div>
+      <div class="stack" style="align-content:start">
+        <h2 style="margin:0">오늘의 한 곳</h2>
+        <div id="v12Notice"></div>
+        <div id="v12One"></div>
+        <div class="card" id="v12Opts" style="padding:16px 18px">
+          <div class="muted small" style="margin-bottom:8px">범위 바꾸기</div>
+          <div class="opts"><div class="seg" id="v12Extra"></div><div class="seg" id="v12Theme"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="tab-settings" hidden>
     <div class="form">
       <label>차종 (탱크·배터리 용량, 기본 연비·전비)<select id="sCar"></select></label>
@@ -266,7 +327,9 @@ const settings = Object.assign({ car: 'ioniq5', mode: 'auto', mockFuel: 45, gas:
 const ui = { extra: 0, day: 'day', themes: [], sort: 'rec', rest: false, shown: [] };
 // SDK에서 읽은 값. 실패한 값은 null (에뮬에서는 연료·연비·전비가 실패)
 const live = { evSoc: null, evCapacity: null, fuelPercent: null, fuelEconomy: null, evEfficiency: null, range: null,
-  gear: null, ux: false, charging: null, seats: {}, origin: { ...DEFAULT_ORIGIN }, locFromNavi: false, nav: {} };
+  gear: null, ux: false, charging: null, seats: {}, origin: { ...DEFAULT_ORIGIN }, locFromNavi: false, nav: {},
+  // v1.2 탭: AAOS 표준 속성(주행가능거리 m, 배터리 용량 Wh, 연료 종류, 제조사), 누적 주행거리 km, 최근 목적지
+  rangeAaos: null, capacityAaos: null, fuelType: null, carMake: null, odometer: null, recent: null };
 
 // ── 형식 ──
 function won(n) {
@@ -660,6 +723,250 @@ $('demoRecords').addEventListener('click', () => {
   store.set('records', recs); renderLog();
 });
 
+// ════════ PRD v1.2 탭 ════════
+// 숫자 표기(5-3): 잔고·정산은 천 원 단위, 카드 비용·1인 몫은 어림
+function wonK(n) {
+  const r = Math.round(Math.max(0, n) / 1000);
+  if (r === 0) return '1천 원 미만';
+  const man = Math.floor(r / 10), chun = r % 10;
+  return man ? `${man}만${chun ? ` ${chun}천` : ''} 원` : `${chun}천 원`;
+}
+function won5k(n) { const r = Math.max(5000, Math.round(n / 5000) * 5000); return `${wonK(r)} 안팎`; }
+const durRound = (min) => dur(Math.max(5, Math.round(min / 5) * 5));
+const DEFAULT_UNIT = { gas: 1680, home: 300, fast: 350 };
+const NEAR_MIN = 75; // 편도 75분 안
+const ui12 = { extra: 0, theme: null, deck: [], idx: 0, swaps: 0, askTheme: false, open: false, sig: '' };
+
+// 잔고: km는 차량 주행가능거리(RANGE_REMAINING) 1순위, 원은 잔량 × 용량 × 단가
+function balance12() {
+  const ev = isEV(), c = car();
+  const pct = ev ? live.evSoc : (live.fuelPercent ?? +settings.mockFuel);
+  const capacity = ev ? (live.capacityAaos > 0 ? live.capacityAaos / 1000 : live.evCapacity > 0 ? live.evCapacity / 1000 : (c.ev ? c.capacity : 77.4))
+    : (c.ev ? 50 : c.capacity);
+  // SDK 단위: 전기 km/kWh, 내연 L/100km → km/L로 바꾼다. 없으면 차종 표(공인) × 0.85
+  let eff, effSrc;
+  if (ev && live.evEfficiency > 0) { eff = live.evEfficiency; effSrc = '차량'; }
+  else if (!ev && live.fuelEconomy > 0) { eff = 100 / live.fuelEconomy; effSrc = '차량 (L/100km 환산)'; }
+  else { eff = (c.ev === ev ? c.eff : (ev ? 5.0 : 13.0)) * 0.85; effSrc = '공인 × 0.85'; }
+  const unitKey = ev ? (settings.source === 'fast' ? 'fast' : 'home') : 'gas';
+  const unit = +settings[unitKey], avgUnit = unit === DEFAULT_UNIT[unitKey];
+  const amount = (pct ?? 0) / 100 * capacity;
+  const rangeKm = live.rangeAaos > 0 ? live.rangeAaos / 1000 : null;
+  const dist = rangeKm ?? amount * eff;
+  const margin = Math.max(+settings.margin, dist * 0.15);
+  return { ev, pct, capacity, eff, effSrc, unit, avgUnit, amount, won: amount * unit, dist, distSrc: rangeKm != null ? '차량 주행가능거리' : '잔량 × 연비',
+    margin, usable: Math.max(0, dist - margin), unitName: ev ? 'kWh' : 'L', energyName: ev ? '충전' : '주유', tankName: ev ? '배터리' : '탱크' };
+}
+const demoValues = () => !cc || /42dot/i.test(live.carMake || '') || (!isEV() && live.fuelPercent == null);
+
+// 금액 배지: 왕복이 사용 가능 거리의 90% 이하 → "추가 충전 없이 · 여유", 90~100% → "빠듯"만, 넘으면 "+○ 안팎"
+function badge12(c, b) {
+  if (c.rt <= b.usable * 0.9) return `<span class="badge ok">추가 ${b.energyName} 없이 · 여유 ${km(b.margin)}</span>`;
+  if (c.rt <= b.usable) return '<span class="badge tight">빠듯</span>';
+  return `<span class="badge extra">+${won5k((c.rt - b.usable) / b.eff * b.unit)}</span>`;
+}
+const ledger = () => store.get('ledger12', []);
+// 점수 = 추가 비용 적합 + 75분 안 + 테마 일치 + 지난번과 다른 테마/처음 가는 곳 − 최근 방문 + 주차 정보. 상위 3개 근거 → 이유 한 줄
+function ranked12(b, extra = ui12.extra) {
+  const extraKm = extra / b.unit * b.eff;
+  const past = [...ledger().filter((x) => x.place), ...store.get('records', [])].sort((x, y) => y.at - x.at);
+  const seen = new Set(past.map((x) => x.place || x.name)), lastTheme = past[0]?.theme;
+  return PLACES.map((p) => ({ p, c: costOf(p, b) }))
+    .filter(({ p, c }) => c.minutes <= DAY_MAX_ONEWAY && c.rt <= b.usable + extraKm && (!ui12.theme || p.theme === ui12.theme))
+    .map((x) => {
+      const { p, c } = x, f = [];
+      if (c.rt <= b.usable * 0.9) f.push([1.0, '추가 0원 안']); else if (c.rt <= b.usable) f.push([0.4, null]); else f.push([0.2, `+${wonK(extra)} 안`]);
+      if (c.minutes <= NEAR_MIN) f.push([0.8, `${NEAR_MIN}분 안`]);
+      if (ui12.theme && p.theme === ui12.theme) f.push([0.6, '고른 테마']);
+      if (lastTheme) f.push(p.theme !== lastTheme ? [0.5, '지난번과 다른 테마'] : [-0.4, null]);
+      f.push(seen.has(p.name) ? [-0.8, null] : [0.3, '처음 가는 곳']);
+      f.push([0.5 * (1 - Math.abs(c.rt / Math.max(1, b.usable + extraKm) - 0.6)), null]); // 범위를 알차게 쓰는 거리
+      if (p.parking != null) f.push([0.05, null]); // 주차 정보: 점수에만, 이유 문구에는 안 씀
+      const score = f.reduce((s, [v]) => s + v, 0);
+      const why = f.filter(([v, t]) => t && v > 0).sort((a, z) => z[0] - a[0]).slice(0, 3).map(([, t]) => t);
+      return { ...x, score, why };
+    }).sort((a, z) => z.score - a.score);
+}
+// 스택 4장: 1위 앞면, 2~3장은 75분 안, 1장은 "조금 먼 곳"
+function buildDeck(list) {
+  const near = list.filter((x) => x.c.minutes <= NEAR_MIN), far = list.filter((x) => x.c.minutes > NEAR_MIN);
+  const out = list.slice(0, 1);
+  for (const x of near) { if (out.length >= 3) break; if (!out.includes(x) && !out.some((o) => o.p.theme === x.p.theme)) out.push(x); }
+  for (const x of near) { if (out.length >= 3) break; if (!out.includes(x)) out.push(x); }
+  const farOne = far.find((x) => !out.includes(x)); if (farOne) out.push(farOne);
+  for (const x of list) { if (out.length >= 4) break; if (!out.includes(x)) out.push(x); }
+  return out.map((x) => x.p.name);
+}
+
+function render12() {
+  const b = balance12(), n = people();
+  $('v12Demo').hidden = !demoValues();
+  // 잔고
+  $('v12BalTitle').textContent = `${b.tankName}에 든 돈 (${b.ev ? '전기차' : '내연'})`;
+  $('v12Bal').innerHTML = b.pct == null ? '읽는 중…' : `${wonK(b.won)}어치 <small>· 약 ${km(b.dist)}</small>`;
+  $('v12Kv').innerHTML = [
+    ['거리 기준', b.distSrc], [b.ev ? '전비' : '연비', `${b.eff.toFixed(1)} km/${b.unitName} (${b.effSrc})`],
+    ['단가', `${b.unit.toLocaleString('ko-KR')}원/${b.unitName}${b.avgUnit ? ' · 평균 단가' : ''}`],
+    ['안전 여유', km(b.margin)], ...(n > 1 ? [['인원', `${n}명 · 1인 ${wonK(b.won / n)}어치`]] : []),
+  ].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
+  renderSettle12(); renderRefill12(b); renderTrip12(); renderMonth12();
+  // 범위 바꾸기
+  const seg12 = (id, items, cur, set) => { $(id).innerHTML = items.map(([v, l]) => `<button data-v="${v}" class="${String(cur) === String(v) ? 'on' : ''}">${l}</button>`).join('');
+    $(id).onclick = (e) => { const v = e.target.closest('[data-v]')?.dataset.v; if (v == null) return; set(v); ui12.deck = []; ui12.idx = 0; ui12.swaps = 0; ui12.askTheme = false; render12(); }; };
+  seg12('v12Extra', [[0, '추가 0원'], [10000, '+1만'], [30000, '+3만']], ui12.extra, (v) => { ui12.extra = +v; });
+  seg12('v12Theme', [['', '테마 전부'], ...THEMES.map((t) => [t.id, t.name])], ui12.theme || '', (v) => { ui12.theme = v || null; });
+  // 한 장
+  if (b.pct == null) { $('v12One').innerHTML = '<div class="notice">차량 값을 읽는 중이에요…</div>'; return; }
+  let list = ranked12(b), notice = '';
+  if (!list.length && ui12.extra === 0) {
+    for (const x of [10000, 30000]) { list = ranked12(b, x); if (list.length) { notice = `추가 0원 안에는 갈 곳이 없어요. +${wonK(x)} 범위에서 골랐어요.`; break; } }
+  }
+  // 이미 보던 카드는 +3만 범위 안이면 그대로 두고 배지만 바꾼다(PT 3단계: SOC 80 → 35)
+  const keep = ranked12(b, 30000);
+  if (!ui12.deck.length || !keep.some((x) => x.p.name === ui12.deck[ui12.idx])) { ui12.deck = buildDeck(list); ui12.idx = 0; ui12.swaps = 0; }
+  if (ui12.askTheme) notice = '세 번째예요. 테마를 바꿔 볼까요? 아래 범위 바꾸기에서 고를 수 있어요.';
+  $('v12Notice').innerHTML = notice ? `<div class="notice">${notice}</div>` : '';
+  const cur = keep.find((x) => x.p.name === ui12.deck[ui12.idx]);
+  if (!cur) { $('v12One').innerHTML = '<div class="notice">이 조건에 맞는 곳이 없어요. 테마를 풀거나 더 쓸 돈을 늘려 보세요.</div>'; return; }
+  queueTrips(ui12.deck, true);
+  const { p, c, why } = cur, left = ui12.deck.length - ui12.idx - 1;
+  $('v12One').innerHTML = `<div class="one-wrap">
+      ${left >= 3 ? '<div class="one-back b1"></div>' : ''}${left >= 2 ? '<div class="one-back b3"></div>' : ''}${left >= 1 ? '<div class="one-back b2"></div>' : ''}
+      <article class="one${ui12.open ? ' open' : ''}">
+        <div class="art">${art(p.theme, 3)}<span class="pill">${c.minutes <= NEAR_MIN ? `${NEAR_MIN}분 안` : '조금 먼 곳'}</span></div>
+        <div class="body">
+          <div class="meta">${themeName(p.theme)} · <b>${durRound(c.minutes)}</b>${c.fromNavi ? '' : ' (추정)'}</div>
+          <h3 class="title-m" style="margin:0">${p.name}</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${badge12(c, b)}${n > 1 ? `<span class="badge" style="background:var(--surface-accent)">1인 ${wonK(Math.max(1000, Math.round(c.total / n / 1000) * 1000))} 안팎</span>` : ''}</div>
+          ${why.length ? `<div class="reason">${why.join(' · ')}</div>` : ''}
+          <div class="split">${b.ev ? '전기' : '연료'} ${won5k(c.energy)} · 통행료 ${c.toll ? won5k(c.toll) : '없음'} · 주차 ${c.parking ? wonK(c.parking) : '무료/정보 없음'}<br>왕복 약 ${km(c.rt)} · 합계 <b>${won5k(c.total)}</b>${b.avgUnit ? ' · 평균 단가 기준' : ''}</div>
+          <div class="btns"><button data-one="split">비용 보기</button><button data-one="swap" style="white-space:nowrap">다른 곳 ${Math.max(0, 2 - ui12.swaps)}번</button><button class="filled" data-one="go">출발</button></div>
+        </div>
+      </article></div>
+    <div class="stack-label">${left > 0 ? `다른 후보 ${left}` : '마지막 후보예요'}</div>`;
+}
+$('v12One').addEventListener('click', (e) => {
+  const a = e.target.closest('[data-one]')?.dataset.one; if (!a) return;
+  if (a === 'split') ui12.open = !ui12.open;
+  else if (a === 'swap') {
+    if (ui12.swaps >= 2 || ui12.idx >= ui12.deck.length - 1) { ui12.askTheme = true; }
+    else { ui12.idx++; ui12.swaps++; ui12.open = false; }
+  } else depart12(PLACES.find((p) => p.name === ui12.deck[ui12.idx]));
+  render12();
+});
+
+// ── F10 시동(앱 실행) 시점 정산: (지금 누적 주행거리 − 직전 정산 주행거리) ÷ 연비 × 직전 단가, ÷ 직전 착석 수 ──
+let settleChecked = false;
+function checkSettle() {
+  if (live.odometer == null || store.get('trip', null)?.v === 12) return;
+  settleChecked = true;
+  const b = balance12(), base = store.get('settle12', null), now = { odo: live.odometer, unit: b.unit, eff: b.eff, ev: b.ev, seats: people(), at: Date.now() };
+  if (!base) { store.set('settle12', now); return; } // 첫 실행: 기준점만 저장
+  const dkm = live.odometer - base.odo;
+  if (dkm > 0.5) {
+    const last = live.recent?.[0];
+    const entry = { type: 'settle', km: dkm, won: dkm / base.eff * base.unit, seats: base.seats, at: Date.now(), from: base.at,
+      place: last?.name || null, lat: last?.latitude, lng: last?.longitude, theme: PLACES.find((p) => p.name === last?.name)?.theme };
+    store.set('ledger12', [entry, ...ledger()]);
+    store.set('settleCard12', entry);
+  }
+  if (dkm !== 0) store.set('settle12', now); // 0이면 카드 생략, 기준점 유지
+}
+function renderSettle12() {
+  const e = store.get('settleCard12', null), el = $('v12Settle');
+  if (!e) { el.hidden = true; return; }
+  el.hidden = false;
+  const days = Math.floor((e.at - e.from) / 86400000);
+  el.innerHTML = `<div class="muted small">앱을 열 때 정산했어요</div>
+    <div class="head">지난번 이후 ${days >= 1 ? `${days}일 · ` : ''}${km(e.km)} · 약 ${wonK(e.won)}${e.place ? ` · 마지막 목적지 ${e.place}` : ''}</div>
+    ${e.seats > 1 ? `<div class="muted small">${e.seats}명이 탔으면 1인 약 ${wonK(e.won / e.seats)}</div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="ghost" id="v12SettleClose">닫기</button></div>`;
+  $('v12SettleClose').onclick = () => { store.set('settleCard12', null); render12(); };
+}
+
+// ── F9 충전·주유 직후: 전기차는 SOC 증가분으로 금액 추정 → 바로 한 장, 내연은 금액 확인 ──
+function renderRefill12(b) {
+  const el = $('v12Refill');
+  if (!refill) { el.hidden = true; return; }
+  el.hidden = false;
+  const amount = refill.amount ?? (b.ev && refill.to > refill.from ? (refill.to - refill.from) / 100 * b.capacity * b.unit : null);
+  if (amount == null) {
+    const full = Math.max(0, (100 - (refill.from ?? 0)) / 100 * b.capacity * b.unit);
+    el.innerHTML = `<h2>방금 주유했네요</h2><div class="muted small">결제 금액은 차가 몰라요. 얼마 넣었는지 골라 주세요.</div>
+      <div class="row"><button data-r="30000">3만 원</button><button data-r="50000">5만 원</button><button data-r="${Math.round(full)}">가득</button>
+      <input id="v12AmtIn" type="number" placeholder="직접 (원)" style="width:130px"><button data-r="input">확인</button><button class="ghost" data-r="close">닫기</button></div>`;
+    return;
+  }
+  const dist = amount / b.unit * b.eff;
+  const pick = ranked12(b, 30000).find((x) => x.c.rt <= dist) || ranked12(b)[0];
+  el.innerHTML = `<h2>방금 약 ${wonK(amount)}어치 ${b.energyName}${refill.to > refill.from ? ` <small class="muted">(${Math.round(refill.from)}% → ${Math.round(refill.to)}%)</small>` : ''}</h2>
+    <div class="muted">그만큼이면 약 ${km(dist)}${pick ? ` · <b style="color:var(--text-primary)">${pick.p.name}</b> 왕복` : ''}</div>
+    <div class="row">${pick ? `<button class="on" data-r="show" data-name="${pick.p.name}">이 한 장 보기</button>` : ''}<button class="ghost" data-r="close">닫기</button></div>`;
+}
+$('v12Refill').addEventListener('click', (e) => {
+  const t = e.target.closest('[data-r]'); if (!t) return;
+  const a = t.dataset.r;
+  if (a === 'close') refill = null;
+  else if (a === 'show') { ui12.deck = [t.dataset.name, ...ui12.deck.filter((x) => x !== t.dataset.name)].slice(0, 4); ui12.idx = 0; ui12.swaps = 0; refill = null; }
+  else if (a === 'input') { const v = +$('v12AmtIn').value; if (!(v > 0)) return toast('금액을 넣어 주세요'); refill.amount = v; }
+  else refill.amount = +a;
+  store.set('refill', refill); render12();
+});
+
+// ── 출발 (경유지는 사용자가 고른 곳만 → 앱이 휴게소를 추천하지 않는다) / 도착 ──
+function depart12(p) {
+  if (!cc) return toast('앱 밖에서는 내비를 부를 수 없어요');
+  if (live.ux) return toast('주행 중에는 고를 수 없어요');
+  const b = balance12(), c = costOf(p, b);
+  store.set('trip', { v: 12, name: p.name, theme: p.theme, lat: p.lat, lng: p.lng, startOdo: live.odometer, unit: b.unit, eff: b.eff,
+    est: { energy: c.energy / 2, toll: c.toll / 2, parking: p.parking, one: c.one }, people: people(), at: Date.now(), rest: null });
+  live.nav = {};
+  cc.requestRoute(p.lat, p.lng, p.name, 'RECOMMENDED');
+  toast(`${p.name}로 안내를 요청했어요`);
+  render12();
+}
+function renderTrip12() {
+  const trip = store.get('trip', null), el = $('v12Trip');
+  if (trip?.v !== 12) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<h2>${trip.name}로 가는 중</h2>
+    <div class="kv"><span>남은 거리 <b>${live.nav.remainDistance != null ? km(live.nav.remainDistance / 1000) : '내비 정보 기다리는 중'}</b></span>
+    ${live.nav.remainTime != null ? `<span>남은 시간 <b>${dur(live.nav.remainTime / 60)}</b></span>` : ''}</div>
+    <div class="muted small" style="margin-top:8px">도착해서 기어 P로 두고 운전석 문을 열면 기록돼요.</div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="ghost" id="v12Cancel">여행 취소</button></div>`;
+  $('v12Cancel').onclick = () => { store.set('trip', null); cc?.cancelRoute(); render12(); };
+}
+// 도착: 주행거리가 늘었으면 그 차이로, 아니면(에뮬) 편도 추정으로 이동비를 쌓는다. 예상과 실제 비교 문구는 쓰지 않는다
+function finish12() {
+  const trip = store.get('trip', null); if (trip?.v !== 12) return;
+  const dkm = live.odometer != null && trip.startOdo != null ? live.odometer - trip.startOdo : 0;
+  const measured = dkm > 0.5, kmUsed = measured ? dkm : trip.est.one;
+  const toll = live.nav.tollFare ?? trip.est.toll;
+  const entry = { type: 'arrive', km: kmUsed, won: kmUsed / trip.eff * trip.unit + toll, seats: trip.people, at: Date.now(),
+    place: trip.name, lat: trip.lat, lng: trip.lng, theme: trip.theme, demo: !measured };
+  store.set('ledger12', [entry, ...ledger()]);
+  store.set('trip', null);
+  if (live.odometer != null) store.set('settle12', { odo: live.odometer, unit: trip.unit, eff: trip.eff, seats: people(), at: Date.now() }); // 다음 정산과 겹치지 않게
+  toast(`${trip.name} 도착 · 이번 달 이동비에 넣었어요`);
+  renderAll();
+}
+
+// ── F17 다녀온 곳 + 이번 달 이동비 ──
+function renderMonth12() {
+  const d = new Date(), month = ledger().filter((x) => { const t = new Date(x.at); return t.getFullYear() === d.getFullYear() && t.getMonth() === d.getMonth(); });
+  const places = new Set(month.filter((x) => x.place).map((x) => x.place));
+  $('v12Month').textContent = `이번 달 이동비 ${month.length ? `약 ${wonK(month.reduce((s, x) => s + x.won, 0))}` : '0원'} · 다녀온 곳 ${places.size}곳`;
+  const P = (lat, lng) => { const [x, y] = proj(lat, lng); return [x, y * 360 / 520]; };
+  const [ox, oy] = P(live.origin.lat, live.origin.lng);
+  $('v12Map').innerHTML = CITIES.map(([nm, lat, lng]) => { const [x, y] = P(lat, lng); return `<circle cx="${x}" cy="${y}" r="3" fill="#3a4a73"/><text x="${x + 6}" y="${y + 4}" fill="#5b6c96" font-size="13">${nm}</text>`; }).join('')
+    + month.filter((x) => x.lat).map((x) => { const [px, py] = P(x.lat, x.lng), col = (THEMES.find((t) => t.id === x.theme) || THEMES[0]).c[1];
+      return `<path d="M${px} ${py} l-8 -16 a9 9 0 1 1 16 0z" fill="${col}"/><text x="${px + 10}" y="${py - 10}" fill="currentColor" font-size="13">${x.place}</text>`; }).join('')
+    + `<circle cx="${ox}" cy="${oy}" r="7" fill="#3ddc84"/>`;
+  $('v12Ledger').innerHTML = month.length ? month.slice(0, 6).map((x) => `<div class="rec"><div><b>${x.place || '이동'}</b> <span class="muted">${new Date(x.at).toLocaleDateString('ko-KR')}</span><br>
+    <span class="muted">${x.type === 'settle' ? '앱 열 때 정산' : '도착'} · ${km(x.km)}${x.demo ? ' · 시연용 값' : ''}${x.seats > 1 ? ` · 1인 약 ${wonK(x.won / x.seats)}` : ''}</span></div><div style="text-align:right"><b>약 ${wonK(x.won)}</b></div></div>`).join('')
+    : '<div class="muted small" style="margin-top:10px">아직 이번 달 기록이 없어요.</div>';
+}
+
 // ── 설정 ──
 $('sCar').innerHTML = CARS.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
 const SET = { sCar: 'car', sMode: 'mode', sMockFuel: 'mockFuel', sGas: 'gas', sHome: 'home', sFast: 'fast', sSource: 'source', sMargin: 'margin', sCount: 'count', sCommute: 'commute', sPeople: 'people' };
@@ -699,7 +1006,7 @@ function renderAll() {
   requestAnimationFrame(() => {
     renderQueued = false;
     const t = store.get('tab', 'home');
-    if (t === 'home') renderHome(); else if (t === 'find') renderFind(); else if (t === 'log') renderLog();
+    if (t === 'home') renderHome(); else if (t === 'find') renderFind(); else if (t === 'log') renderLog(); else if (t === 'v12') render12();
     $('cGear').textContent = live.gear ? String(live.gear).replace('GEAR_', '') : '—';
     $('cPeople').textContent = `${people()}명`;
     $('cLoc').textContent = live.locFromNavi ? '내비' : '고정';
@@ -716,10 +1023,13 @@ window.onChagok = (m) => {
     if (sig[m.key] === JSON.stringify(v)) return;
     sig[m.key] = JSON.stringify(v);
     if (SEAT_KEYS.includes(m.key)) live.seats[m.key] = v === true;
+    // v1.2: 기어 P에서 운전석 문이 열리면 도착 (에뮬 PT 6단계)
+    else if (m.key === 'door.ROW_1_LEFT') { if (v > 0 && live.gear === 'GEAR_PARK' && store.get('trip', null)?.v === 12) finish12(); }
     else if (m.key === 'uxRestricted') live.ux = v === true;
     else if (m.key === 'evCharging') { if (v != null) watchCharging(v); }
     else if (m.key in live) live[m.key] = v;
     if (m.key === 'evSoc' || (m.key === 'fuelPercent' && v != null)) watchRefill(v);
+    if (m.key === 'odometer' && v != null && !settleChecked) checkSettle(); // 앱을 열고 처음 읽은 값으로만 정산
     renderAll();
   } else if (m.type === 'navi') {
     const d = m.data;
@@ -733,7 +1043,8 @@ window.onChagok = (m) => {
     else if (m.event === 'routeStarted' && d && store.get('trip', null)?.name === d.name && !store.get('trip').rest) {
       saveRoute(d.name, d); // 실제 출발한 경로 값도 다음 추천에 쓴다 (경유지가 있으면 첫 구간 값이라 저장하지 않음)
     }
-    else if (m.event === 'destinationArrived') finishTrip(d);
+    else if (m.event === 'destinationArrived') { if (store.get('trip', null)?.v === 12) finish12(); else finishTrip(d); }
+    else if (m.event === 'recentDestinations' && Array.isArray(d)) { live.recent = d; renderAll(); }
     else if (m.event === 'routeCancelled' && store.get('trip', null)) toast('내비 안내가 취소됐어요 (여행은 남겨 둘게요)');
   }
 };
@@ -742,11 +1053,19 @@ if (!cc) {
   toast('앱 밖에서는 차량 값을 읽을 수 없어요 (데모값으로 보여요)');
   live.evSoc = 72; live.gear = 'GEAR_PARK';
 } else {
-  cc.readAll();
+  // 최근 목적지를 먼저 받아 두고 차량 값을 읽는다 (정산 카드의 "마지막 목적지")
+  cc.readRecent();
+  setTimeout(() => cc.readAll(), 300);
   setTimeout(() => cc.readNavi(), 800);
   setTimeout(() => { if (!live.locFromNavi) queueTrips(PLACES.map((p) => p.name)); }, 5000); // 내비 위치가 안 오면 기본 위치로
-  setInterval(() => cc.readAll(), 2000);
-  setInterval(() => { if (store.get('trip', null) || !live.locFromNavi) cc.readNavi(); }, 10000);
+  // 화면이 보일 때만 읽는다 (가이드: 백그라운드에서는 폴링·타이머를 멈춘다). 다시 보이면 = 앱을 다시 연 것 → 정산 확인
+  let timers = [];
+  const startPolling = () => { timers = [setInterval(() => cc.readAll(), 2000), setInterval(() => { if (store.get('trip', null) || !live.locFromNavi) cc.readNavi(); }, 10000)]; };
+  startPolling();
+  document.addEventListener('visibilitychange', () => {
+    timers.forEach(clearInterval); timers = [];
+    if (document.visibilityState === 'visible') { settleChecked = false; cc.readRecent(); cc.readAll(); startPolling(); }
+  });
 }
 showTab(store.get('tab', 'home'));
 </script>

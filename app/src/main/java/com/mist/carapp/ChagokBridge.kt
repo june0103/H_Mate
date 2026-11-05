@@ -8,6 +8,7 @@ import ai.pleos.playground.navi.data.CurrentLocationInfo
 import ai.pleos.playground.navi.data.DestinationArrivedInfo
 import ai.pleos.playground.navi.data.DestinationInfo
 import ai.pleos.playground.navi.data.DrivingInfo
+import ai.pleos.playground.navi.data.RecentDestinationInfo
 import ai.pleos.playground.navi.data.RequestWaypointInfo
 import ai.pleos.playground.navi.data.RouteInfo
 import ai.pleos.playground.navi.data.RouteStartInfo
@@ -26,7 +27,9 @@ import ai.pleos.playground.vehicle.api.model.area.SeatArea
 import ai.pleos.playground.vehicle.constant.area.DoorValue
 import ai.pleos.playground.vehicle.constant.area.SeatValue
 import android.car.Car
+import android.car.VehiclePropertyIds
 import android.car.drivingstate.CarUxRestrictionsManager
+import android.car.hardware.property.CarPropertyManager
 import android.content.Context
 import android.util.Log
 import android.webkit.JavascriptInterface
@@ -48,6 +51,8 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
     private val json = Json { encodeDefaults = true }
     private val car = runCatching { Car.createCar(context) }.onFailure { Log.w(TAG, "Car connect failed", it) }.getOrNull()
     private val uxr = car?.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager
+    // PRD v1.2 탭: SDK의 getRangeRemainingDistance·getEvBatteryCapacity는 지원 중단 예정(@hide) → AAOS 표준 속성으로 읽는다
+    private val props = runCatching { car?.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager }.getOrNull()
 
     private val doors = listOf(DoorValue.ROW_1_LEFT, DoorValue.ROW_1_RIGHT, DoorValue.ROW_2_LEFT, DoorValue.ROW_2_RIGHT)
     private val seats = listOf(SeatValue.ROW_1_LEFT, SeatValue.ROW_1_RIGHT, SeatValue.ROW_2_LEFT, SeatValue.ROW_2_RIGHT)
@@ -73,6 +78,10 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
         override fun onDrivingInfo(info: DrivingInfo) = naviEvent("drivingInfo", DrivingInfo.serializer(), info)
         override fun onNavigationStatus(status: NavigationStatus) = naviEvent("status", status.name)
         override fun onTripInfo(info: TripInfo) = naviEvent("tripInfo", TripInfo.serializer(), info)
+        // 최근 목적지: 좌표·이름·주소·POI만 있고 시각·도착 여부는 없다 → "마지막 목적지"로만 쓴다
+        override fun onRecentDestinationInfo(recentDestinationInfoList: List<RecentDestinationInfo>) =
+            emit(JSONObject().put("type", "navi").put("event", "recentDestinations")
+                .put("data", JSONArray(recentDestinationInfoList.map { JSONObject(json.encodeToString(RecentDestinationInfo.serializer(), it)) })))
     }
 
     init {
@@ -109,6 +118,12 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
         odo.getTripCurrentDrivingDistance({ v -> value("tripDistance", v) }, { e -> fail("tripDistance", e) })
         odo.getTripCurrentDrivingTime({ v -> value("tripTime", v) }, { e -> fail("tripTime", e) })
         odo.getTripSinceRefillDrivingDistance({ v -> value("refillDistance", v) }, { e -> fail("refillDistance", e) })
+
+        // AAOS 표준 속성 (android.car.permission.CAR_ENERGY·CAR_INFO). 주행가능거리 m, 배터리 용량 Wh
+        prop("rangeAaos", VehiclePropertyIds.RANGE_REMAINING)
+        prop("capacityAaos", VehiclePropertyIds.INFO_EV_BATTERY_CAPACITY)
+        prop("fuelType", VehiclePropertyIds.INFO_FUEL_TYPE)
+        prop("carMake", VehiclePropertyIds.INFO_MAKE)
 
         vehicle.getDrivingMode().getCurrentDrivingModeState({ v -> value("drivingMode", v?.name) }, { e -> fail("drivingMode", e) })
         vehicle.getGear().getCurrentGearSelectionState({ v -> value("gear", v?.name) }, { e -> fail("gear", e) })
@@ -170,6 +185,20 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
         navi.getRouteStateInfo()
         navi.getCurrentLocationInfo()
         navi.getWaypointInfo()
+    }
+
+    /** 최근 목적지 목록: 결과는 onRecentDestinationInfo → { event: "recentDestinations" } */
+    @JavascriptInterface
+    fun readRecent() = naviCall("readRecent") { navi.getRecentDestinationInfo() }
+
+    private fun prop(key: String, id: Int) {
+        val pm = props ?: return emit(error(key, "CarPropertyManager 없음"))
+        try {
+            val v = pm.getProperty<Any>(id, 0)?.value
+            value(key, if (v is Array<*>) JSONArray(v.toList()) else v)
+        } catch (e: Exception) {
+            fail(key, e)
+        }
     }
 
     fun release() {

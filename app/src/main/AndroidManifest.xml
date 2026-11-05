@@ -23,6 +23,9 @@
     <!-- 차곡 데이터 화면: 순정 내비 경로 요청 -->
     <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
     <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
+    <!-- 차곡 v1.2 탭: AAOS 표준 속성 RANGE_REMAINING·INFO_EV_BATTERY_CAPACITY·INFO_FUEL_TYPE·INFO_MAKE -->
+    <uses-permission android:name="android.car.permission.CAR_ENERGY" />
+    <uses-permission android:name="android.car.permission.CAR_INFO" />
 
     <application
         android:allowBackup="true"
