@@ -160,6 +160,23 @@
   .one .btns{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px}
   .stack-label{margin-top:8px;text-align:center;color:var(--text-tertiary);font-size:calc(22*var(--u))}
   .mini-map{width:100%;height:auto;aspect-ratio:600/360;border-radius:calc(24*var(--u));background:var(--surface-low);margin-top:10px}
+  /* ── 노고 정산 탭 (PRD 운전노고정산 v1.1) ── */
+  #tab-nogo{position:relative}
+  .jam-bar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--surface-low);margin:10px 0 6px}
+  .jam-bar span{height:100%}
+  .jam-legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--text-tertiary);font-size:calc(22*var(--u))}
+  .jam-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+  .receipt{font-variant-numeric:tabular-nums}
+  .receipt .r{display:grid;grid-template-columns:7.5em 1fr auto;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:baseline}
+  .receipt .r:first-of-type{border-top:0}
+  .receipt .r b{font-size:calc(28*var(--u))}
+  .receipt .r .w{color:var(--text-tertiary);font-size:calc(22*var(--u))}
+  .receipt .r .pt{font-weight:700;text-align:right;min-width:3.5em}
+  .receipt .src{color:var(--text-quaternary);font-size:calc(20*var(--u))}
+  .receipt .tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;padding-top:12px;border-top:2px solid var(--line)}
+  .offer{box-shadow:inset 0 0 0 2px var(--active)}
+  .offer .big{font-size:calc(40*var(--u));line-height:calc(48*var(--u));font-weight:800;margin:6px 0}
+  .raw{white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace;font-size:calc(20*var(--u));line-height:1.4;color:var(--text-tertiary);max-height:260px;overflow:auto;background:var(--surface-low);padding:10px;border-radius:calc(16*var(--u))}
   /* Window Policy: 1:1 분할·세로(portrait) 창에서도 쓸 수 있게 */
   @media (max-width: 900px){
     .grid2,.find,.form{grid-template-columns:1fr}
@@ -189,6 +206,7 @@
   <button role="tab" data-tab="find" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><circle cx="24" cy="24" r="16"/><path d="m30 18-4 8-8 4 4-8z"/></svg>갈 곳 찾기</button>
   <button role="tab" data-tab="log" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M24 42s13-12.5 13-22a13 13 0 0 0-26 0c0 9.5 13 22 13 22z"/><circle cx="24" cy="20" r="4.5"/></svg>여행 기록</button>
   <button role="tab" data-tab="v12" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><rect x="12" y="8" width="24" height="32" rx="4"/><path d="M8 14v24M40 14v24"/></svg>한 장 (v1.2)</button>
+  <button role="tab" data-tab="nogo" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"><path d="M12 6h24v36l-4-3-4 3-4-3-4 3-4-3-4 3z"/><path d="M18 16h12M18 24h12M18 32h7"/></svg>노고 정산</button>
   <button role="tab" data-tab="settings" aria-selected="false"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M10 14h28M10 24h28M10 34h28"/><circle cx="30" cy="14" r="3.5" fill="currentColor"/><circle cx="18" cy="24" r="3.5" fill="currentColor"/><circle cx="26" cy="34" r="3.5" fill="currentColor"/></svg>설정</button>
 </nav>
 <main>
@@ -280,6 +298,45 @@
     </div>
   </section>
 
+  <!-- 운전 노고 정산 PRD v1.1: 출발 스냅샷(ETA·경로 교통 상태) → 도착 영수증 6줄 → A/B 제안 → 로컬 기록 -->
+  <section id="tab-nogo" hidden>
+    <span class="demo-mark" id="ngDemo" hidden>시연용 값</span>
+    <div class="grid2">
+      <div class="stack" style="align-content:start">
+        <div class="card" id="ngDepart">
+          <h2>출발 전 · 경로 교통 상태</h2>
+          <div class="muted small">순정 내비 <code>requestTrip</code>으로 경로를 미리 받아 ETA와 구간별 혼잡도를 저장해요. 안내는 시작하지 않아요.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+            <select id="ngDest" style="flex:1;min-width:180px"></select>
+            <button id="ngCheck">경로 확인</button>
+            <button class="filled" id="ngGo">출발</button>
+          </div>
+          <div id="ngPreview"></div>
+        </div>
+        <div class="card" id="ngDriving" hidden></div>
+        <div class="card">
+          <h2>SDK 원본 <small class="muted">(효성·명준 확인용)</small></h2>
+          <div class="kv" id="ngSignals"></div>
+          <div class="raw" id="ngRaw" style="margin-top:10px">아직 받은 값이 없어요.</div>
+        </div>
+      </div>
+      <div class="stack" style="align-content:start">
+        <div class="card receipt" id="ngReceipt"><h2>오늘 운전</h2><div class="muted">도착하면 영수증이 여기에 떠요.</div></div>
+        <div class="card offer" id="ngOffer" hidden></div>
+        <div class="card" style="padding:16px 18px">
+          <div class="muted small" style="margin-bottom:8px">시연 설정 (에뮬은 실제로 달리지 않아서 도착 값을 여기서 정해요)</div>
+          <div class="opts" style="gap:10px">
+            <div class="seg" id="ngExtraSeg"></div>
+            <div class="seg" id="ngStartSeg"></div>
+            <div class="seg" id="ngWxSeg"></div>
+            <div class="seg" id="ngAbSeg"></div>
+          </div>
+        </div>
+        <div class="card"><h2 id="ngLogSum">노고 기록</h2><div id="ngLog"></div></div>
+      </div>
+    </div>
+  </section>
+
   <section id="tab-settings" hidden>
     <div class="form">
       <label>차종 (탱크·배터리 용량, 기본 연비·전비)<select id="sCar"></select></label>
@@ -329,7 +386,9 @@ const ui = { extra: 0, day: 'day', themes: [], sort: 'rec', rest: false, shown: 
 const live = { evSoc: null, evCapacity: null, fuelPercent: null, fuelEconomy: null, evEfficiency: null, range: null,
   gear: null, ux: false, charging: null, seats: {}, origin: { ...DEFAULT_ORIGIN }, locFromNavi: false, nav: {},
   // v1.2 탭: AAOS 표준 속성(주행가능거리 m, 배터리 용량 Wh, 연료 종류, 제조사), 누적 주행거리 km, 최근 목적지
-  rangeAaos: null, capacityAaos: null, fuelType: null, carMake: null, odometer: null, recent: null };
+  rangeAaos: null, capacityAaos: null, fuelType: null, carMake: null, odometer: null, recent: null,
+  // 노고 정산 탭: 와이퍼·전조등·안개등·외기온(°C)·야간 모드·주행 시간
+  wiper: null, wiperSwitch: null, lowBeam: null, fogLight: null, outsideTemp: null, nightMode: null, tripTime: null, tripDistance: null };
 
 // ── 형식 ──
 function won(n) {
@@ -967,6 +1026,235 @@ function renderMonth12() {
     : '<div class="muted small" style="margin-top:10px">아직 이번 달 기록이 없어요.</div>';
 }
 
+// ════════ 운전 노고 정산 탭 (PRD v1.1) ════════
+// 출발: requestTrip(ETA·trafficConditions) + requestRoute → onRouteStarted(duration) → getRouteStateInfo(trafficStatus)
+// 도착: onDestinationArrived(duration·distance) 또는 기어 P + 운전석 문 열림 → 영수증 6줄 → A/B 제안
+const JAM = { FAST: ['원활', '#00C26E'], MODERATE: ['서행', '#F5B800'], SLOW: ['지체', '#FF7A1A'], HEAVY: ['정체', '#FF3B30'], UNKNOWN: ['정보 없음', '#777'] };
+const JAM_SPEED = { SLOW: 25, HEAVY: 12 }; // TripInfo에는 구간 시간이 없어 km → 분 추정에 쓰는 속도(km/h, 시연용 가정)
+// 점수 초안(시연용): 효성 수식이 나오면 이 표만 바꾼다. 기준값·가중치를 영수증에 그대로 보여 준다
+const NG_RULE = {
+  time: { per: 60, pt: 10, label: '60분당 10점' },
+  dist: { per: 50, pt: 5, label: '50km당 5점' },
+  wx: { 비: 8, 눈: 12, 안개: 5, 맑음: 0, label: '비 8 · 눈 12 · 안개 5점' },
+  jam: { per: 10, pt: 3, label: '정체 10분당 3점' },
+  delay: { min: 10, per: 10, pt: 4, label: '10분 넘으면 10분당 4점' },
+  night: { per: 30, pt: 4, label: '30분당 4점' },
+  won: 300, grade: [[15, '커피'], [35, '밥'], [Infinity, '공동 경비']],
+};
+const ngUi = Object.assign({ extra: 25, start: 'now', wx: 'auto', ab: 'A', people: 'auto' }, store.get('ngUi', {}));
+const ngPeople = () => (ngUi.people === 'auto' ? people() : +ngUi.people);
+let ngPending = null; // requestTrip을 기다리는 목적지 이름
+const ngRaw = store.get('ngRaw', {});
+function ngSaveRaw(k, v) { ngRaw[k] = v; store.set('ngRaw', ngRaw); }
+
+// 구간 교통(TripInfo.summary.trafficConditions: 혼잡도 + 경로 비율 0~100) → 지체·정체 km·분·비율
+function jamFromTrip(t) {
+  const segs = t?.summary?.trafficConditions || [], dKm = (t?.distance || 0) / 1000;
+  let km = 0, min = 0, pct = 0;
+  for (const s of segs) if (s.congestionType === 'SLOW' || s.congestionType === 'HEAVY') {
+    const p = Math.max(0, s.endRatio - s.startRatio), k = dKm * p / 100;
+    pct += p; km += k; min += k / JAM_SPEED[s.congestionType] * 60;
+  }
+  return { segs, km, min, pct, known: segs.some((s) => s.congestionType !== 'UNKNOWN') };
+}
+// 안내 중 교통(RouteStateInfo.trafficStatus): 혼잡 구간 거리 m·시간 s가 직접 온다
+function jamFromStatus(ts) {
+  if (!ts) return null;
+  const items = ts.congestionItemList || [];
+  const hard = items.filter((i) => i.trafficCongestionType === 'SLOW' || i.trafficCongestionType === 'HEAVY');
+  return { km: hard.reduce((s, i) => s + i.distance, 0) / 1000, min: hard.reduce((s, i) => s + i.trafficCongestionTime, 0) / 60,
+    sumKm: (ts.summary?.totalCongestionDist || 0) / 1000, sumMin: (ts.summary?.totalCongestionTime || 0) / 60, items };
+}
+function jamBar(segs) {
+  if (!segs.length) return '';
+  return `<div class="jam-bar">${segs.map((s) => `<span style="width:${Math.max(0, s.endRatio - s.startRatio)}%;background:${(JAM[s.congestionType] || JAM.UNKNOWN)[1]}"></span>`).join('')}</div>
+    <div class="jam-legend">${['FAST', 'MODERATE', 'SLOW', 'HEAVY', 'UNKNOWN'].map((k) => `<span><i style="background:${JAM[k][1]}"></i>${JAM[k][0]}</span>`).join('')}</div>`;
+}
+
+// 일출·일몰(NOAA 근사, 현지 위경도) → 밤길 = 주행 구간과 일몰~일출의 겹침
+function sunTimes(ms, lat, lng) {
+  const rad = Math.PI / 180, d = new Date(ms), J = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) / 864e5 + 2440587.5;
+  const n = Math.round(J - 2451545.0 - 0.0009 + lng / 360), Js = 2451545.0 + 0.0009 - lng / 360 + n;
+  const M = (357.5291 + 0.98560028 * (Js - 2451545)) % 360, C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const L = (M + C + 180 + 102.9372) % 360, Jt = Js + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * L * rad);
+  const dec = Math.asin(Math.sin(L * rad) * Math.sin(23.44 * rad));
+  const w = Math.acos((Math.sin(-0.833 * rad) - Math.sin(lat * rad) * Math.sin(dec)) / (Math.cos(lat * rad) * Math.cos(dec))) / rad;
+  const toMs = (j) => (j - 2440587.5) * 864e5;
+  return { rise: toMs(Jt - w / 360), set: toMs(Jt + w / 360) };
+}
+function nightMinutes(a, b, lat, lng) {
+  let total = 0;
+  for (let day = a - 864e5; day <= b + 864e5; day += 864e5) {
+    const s = sunTimes(day, lat, lng), next = sunTimes(day + 864e5, lat, lng);
+    const lo = Math.max(a, s.set), hi = Math.min(b, next.rise);
+    if (hi > lo) total += hi - lo;
+  }
+  return total / 6e4;
+}
+const hm = (ms) => new Date(ms).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+// 날씨: 차가 겪은 것으로 판단(와이퍼 ON/AUTO 작동 → 비, 외기온 1°C 이하면 눈, 전면 안개등 → 안개)
+function carWeather() {
+  const wet = live.wiper === 'ON' || (live.wiperSwitch && !['OFF', 'OTHER', 'SERVICE'].includes(live.wiperSwitch));
+  if (wet) return live.outsideTemp != null && live.outsideTemp <= 1 ? '눈' : '비';
+  if (live.fogLight === 'ON') return '안개';
+  return '맑음';
+}
+
+function ngCheck() {
+  const p = PLACES.find((x) => x.name === $('ngDest').value); if (!p) return;
+  if (!cc) return toast('앱 밖에서는 내비를 부를 수 없어요');
+  ngPending = p.name; cc.requestTrip(p.lat, p.lng, p.name); toast('경로를 미리 받는 중이에요');
+}
+function ngGo() {
+  const p = PLACES.find((x) => x.name === $('ngDest').value); if (!p) return;
+  if (!cc) return toast('앱 밖에서는 내비를 부를 수 없어요');
+  if (live.ux) return toast('주행 중에는 고를 수 없어요');
+  const trip = ngRaw.trip?.summary?.routePoints?.find((r) => r.pointType === 'DESTINATION')?.poiName === p.name ? ngRaw.trip : null;
+  store.set('ngTrip', { name: p.name, lat: p.lat, lng: p.lng, start: Date.now(), startOdo: live.odometer, people: people(),
+    trip, eta: trip ? trip.eta : null, routeStart: null, status: null, wxStart: carWeather() });
+  live.nav = {}; ngPending = trip ? null : p.name;
+  if (!trip) cc.requestTrip(p.lat, p.lng, p.name);
+  cc.requestRoute(p.lat, p.lng, p.name, 'RECOMMENDED');
+  toast(`${p.name}로 안내를 요청했어요. 출발 스냅샷을 저장해요`);
+  renderNogo();
+}
+function ngOnEvent(ev, d) {
+  const t = store.get('ngTrip', null);
+  if (ev === 'tripInfo') {
+    const name = d.summary?.routePoints?.find((r) => r.pointType === 'DESTINATION')?.poiName;
+    if (ngPending && name === ngPending) { ngSaveRaw('trip', d); ngPending = null; if (t && !t.trip && t.name === name) { t.trip = d; t.eta = t.eta ?? d.eta; store.set('ngTrip', t); } }
+  } else if (ev === 'routeStarted' && t && !t.routeStart) {
+    ngSaveRaw('routeStarted', d); t.routeStart = d; t.eta = d.duration; store.set('ngTrip', t);
+    setTimeout(() => cc?.readNavi(), 1500); // 안내가 시작되면 trafficStatus를 한 번 받는다
+  } else if (ev === 'routeState') {
+    ngSaveRaw('routeState', d);
+    // 안내 직후 첫 응답은 구간이 비어 있다(실측) → 구간이 처음 채워진 값을 출발 스냅샷으로 쓴다
+    if (t && d.naviMode === 'ROUTE_GUIDING' && d.trafficStatus?.congestionItemList?.length && !t.status?.congestionItemList?.length) { t.status = d.trafficStatus; store.set('ngTrip', t); }
+  } else if (ev === 'destinationArrived') { ngSaveRaw('arrived', d); if (t) ngFinish(d); return; }
+  renderNogo();
+}
+// 도착: 실제 소요·거리는 내비 도착 이벤트 > 주행거리·시각 차이 > (에뮬) 시연 설정
+function ngFinish(arrived) {
+  const t = store.get('ngTrip', null); if (!t) return;
+  const now = Date.now();
+  let actualMin = arrived?.duration ? arrived.duration / 60 : (now - t.start) / 6e4;
+  const etaMin = t.eta != null ? t.eta / 60 : null;
+  let demo = false;
+  let km = arrived?.distance ? arrived.distance / 1000 : (live.odometer != null && t.startOdo != null ? live.odometer - t.startOdo : 0);
+  // 에뮬은 모의주행이 없어 주행거리·시간이 늘지 않는다 → 경로 거리 + (ETA + 시연 지연)으로 대신한다
+  if (km < 0.5) { km = (t.routeStart?.distance || t.trip?.distance || 0) / 1000; demo = true; }
+  if (etaMin != null && (demo || actualMin < etaMin * 0.5)) { actualMin = etaMin + ngUi.extra; demo = true; }
+  let start = t.start, end = start + actualMin * 6e4;
+  if (ngUi.start !== 'now') { const d = new Date(start); d.setHours(+ngUi.start, 0, 0, 0); start = d.getTime(); end = start + actualMin * 6e4; demo = true; }
+  const jt = jamFromTrip(t.trip), js = jamFromStatus(t.status);
+  const jam = js && js.km > 0 ? { km: js.km, min: js.min, pct: km ? js.km / km * 100 : 0, src: '안내 중 trafficStatus' }
+    : { km: jt.km, min: jt.min, pct: jt.pct, src: jt.known ? 'requestTrip 구간 비율(분은 추정)' : '교통 정보 없음' };
+  const wxEnd = carWeather();
+  let wx = [t.wxStart, wxEnd].find((w) => w !== '맑음') || '맑음';
+  if (ngUi.wx !== 'auto') { wx = ngUi.wx; demo = true; }
+  const delay = etaMin != null ? Math.max(0, actualMin - etaMin) : 0;
+  const night = nightMinutes(start, end, live.origin.lat, live.origin.lng);
+  const rec = { name: t.name, at: now, start, end, actualMin, etaMin, km, wx, wxSrc: ngUi.wx !== 'auto' ? '시연 설정' : '와이퍼·안개등·외기온',
+    jam, delay, night, lowBeam: live.lowBeam, people: ngUi.people === 'auto' ? (t.people || people()) : ngPeople(), demo };
+  rec.score = ngScore(rec);
+  store.set('ngTrip', null); store.set('ngLast', rec);
+  toast(`${t.name} 도착 · 오늘 운전을 정리했어요`);
+  renderAll();
+}
+function ngScore(r) {
+  const R = NG_RULE, rows = [
+    ['time', '주행 총 시간', dur(r.actualMin), r.actualMin / R.time.per * R.time.pt, R.time.label, r.demo && r.etaMin != null ? '' : ''],
+    ['dist', '거리', km(r.km), r.km / R.dist.per * R.dist.pt, R.dist.label],
+    ['wx', '날씨', r.wx, R.wx[r.wx] || 0, R.wx.label],
+    ['jam', '정체 구간', r.jam.km >= 0.1 ? `${r.jam.km.toFixed(1)}km · 약 ${Math.round(r.jam.min)}분 (경로의 ${Math.round(r.jam.pct)}%)` : '없음', r.jam.min / R.jam.per * R.jam.pt, R.jam.label],
+    ['delay', '예상보다 더', r.delay >= R.delay.min ? `+${Math.round(r.delay)}분` : '없음', r.delay >= R.delay.min ? r.delay / R.delay.per * R.delay.pt : 0, R.delay.label],
+    ['night', '밤길', r.night >= 1 ? dur(r.night) : '없음', r.night / R.night.per * R.night.pt, R.night.label],
+  ].map(([k, name, val, pt, rule]) => ({ k, name, val, pt: Math.round(pt * 10) / 10, rule }));
+  const total = Math.round(rows.reduce((s, x) => s + x.pt, 0));
+  const won = Math.round(total * R.won / 1000) * 1000;
+  const grade = R.grade.findIndex(([lim]) => total < lim), cat = R.grade[grade][1];
+  return { rows, total, won, grade: ['하', '중', '상'][grade], cat };
+}
+
+function renderNogo() {
+  if (!$('ngDest').options.length) $('ngDest').innerHTML = PLACES.map((p) => `<option${p.name === '양평 두물머리' ? ' selected' : ''}>${p.name}</option>`).join('');
+  const t = store.get('ngTrip', null), last = store.get('ngLast', null);
+  $('ngDemo').hidden = !(demoValues() || last?.demo);
+  // 출발 전 미리보기
+  const pv = ngRaw.trip && ngRaw.trip.summary?.routePoints?.find((r) => r.pointType === 'DESTINATION')?.poiName === $('ngDest').value ? ngRaw.trip : null;
+  if (pv) {
+    const j = jamFromTrip(pv);
+    $('ngPreview').innerHTML = `<div class="kv" style="margin-top:12px"><span>ETA <b>${dur(pv.eta / 60)}</b></span><span>거리 <b>${km(pv.distance / 1000)}</b></span>
+      <span>지체·정체 <b>${j.km.toFixed(1)}km · 약 ${Math.round(j.min)}분 (경로의 ${Math.round(j.pct)}%)</b></span><span>구간 <b>${j.segs.length}개</b></span></div>
+      ${jamBar(j.segs) || '<div class="muted small" style="margin-top:8px">구간 교통 정보가 비어 있어요(trafficConditions 0개).</div>'}`;
+  } else $('ngPreview').innerHTML = '<div class="muted small" style="margin-top:10px">경로 확인을 누르면 ETA와 구간 교통이 떠요.</div>';
+  // 주행 중
+  const dv = $('ngDriving');
+  if (!t) dv.hidden = true;
+  else {
+    dv.hidden = false;
+    const js = jamFromStatus(t.status), jt = jamFromTrip(t.trip);
+    dv.innerHTML = `<h2>${t.name}로 가는 중 <small class="muted">출발 ${hm(t.start)}</small></h2>
+      <div class="kv"><span>출발 때 ETA <b>${t.eta != null ? dur(t.eta / 60) : '받는 중'}</b> <small>(${t.routeStart ? 'onRouteStarted' : t.trip ? 'requestTrip' : '—'})</small></span>
+      <span>경로 거리 <b>${t.routeStart ? km(t.routeStart.distance / 1000) : t.trip ? km(t.trip.distance / 1000) : '—'}</b></span>
+      <span>출발 때 정체(trip) <b>${jt.km.toFixed(1)}km</b></span>
+      <span>안내 중 trafficStatus <b>${t.status ? (js.items.length ? `${js.km.toFixed(1)}km · ${Math.round(js.min)}분 · 합계 ${js.sumKm.toFixed(1)}km` : '구간 0개') : '받는 중/null'}</b></span>
+      <span>출발 날씨(차) <b>${t.wxStart}</b></span></div>
+      <div class="muted small" style="margin-top:8px">이 기능은 주행 중에 화면을 쓰지 않고 값도 모으지 않아요. 도착해서 기어 P로 두고 운전석 문을 열면 정리돼요.</div>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="on" id="ngArrive">도착 처리 (에뮬 시연)</button><button class="ghost" id="ngCancel">취소</button></div>`;
+    $('ngArrive').onclick = () => ngFinish(null);
+    $('ngCancel').onclick = () => { store.set('ngTrip', null); cc?.cancelRoute(); renderNogo(); };
+  }
+  // 신호
+  $('ngSignals').innerHTML = [['와이퍼', live.wiper], ['와이퍼 스위치', live.wiperSwitch], ['전조등', live.lowBeam], ['안개등', live.fogLight],
+    ['외기온', live.outsideTemp != null ? `${(+live.outsideTemp).toFixed(1)}°C` : null], ['야간 모드', live.nightMode],
+    ['주행 시간(trip)', live.tripTime], ['주행 거리(trip)', live.tripDistance != null ? `${Math.round(live.tripDistance)}m` : null],
+    ['누적 주행거리', live.odometer != null ? `${live.odometer}km` : null], ['차 기준 날씨', carWeather()],
+    ['오늘 일몰', hm(sunTimes(Date.now(), live.origin.lat, live.origin.lng).set)]]
+    .map(([k, v]) => `<span>${k} <b>${v ?? '읽기 실패/없음'}</b></span>`).join('');
+  $('ngRaw').textContent = Object.keys(ngRaw).length ? Object.entries(ngRaw).map(([k, v]) => `■ ${k}\n${JSON.stringify(v, null, 1)}`).join('\n\n') : '아직 받은 값이 없어요.';
+  // 영수증·제안
+  if (last) {
+    const s = last.score;
+    $('ngReceipt').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="margin:0">오늘 운전 · ${last.name}</h2><span class="muted small">${hm(last.start)} → ${hm(last.end)}</span></div>
+      ${s.rows.map((r) => `<div class="r"><span class="muted">${r.name}</span><div><b>${r.val}</b><div class="w">${r.rule}</div></div><span class="pt">${r.pt}</span></div>`).join('')}
+      <div class="src">정체 구간은 내비 안내 경로 기준(${last.jam.src}) · 날씨는 ${last.wxSrc} · 점수는 시연용 초안</div>
+      <div class="tot"><span class="muted">노고</span><b class="title-m">${s.total}점</b></div>`;
+    const of = $('ngOffer'); of.hidden = false;
+    const many = last.people > 1;
+    of.innerHTML = !many ? `<h2>혼자 운전했어요</h2><div class="muted">나눠 낼 사람이 없어서 제안 없이 오늘 운전만 보여 드려요.</div>`
+      : ngUi.ab === 'A' ? `<div class="muted">방식 A · 돈으로 환산</div><div class="big">오늘 운전 노고 약 ${wonK(s.won)}</div>
+        <div class="muted small">노고 ${s.total}점 × 1점당 ${NG_RULE.won}원(시연용 계수) · ${last.people}명이 함께 탔어요 · 송금·청구는 하지 않아요</div>${ngChoices()}`
+      : `<div class="muted">방식 B · 한 번 빼 주기 (노고 ${s.grade})</div><div class="big">오늘은 ${s.cat}에서 운전자 빼고 나누기</div>
+        <div class="seg" style="margin:8px 0">${NG_RULE.grade.map(([, c]) => `<button data-cat="${c}" class="${c === s.cat ? 'on' : ''}">${c}</button>`).join('')}</div>
+        <div class="muted small">노고 15점 미만 커피 · 35점 미만 밥 · 그 이상 공동 경비(시연용 경계)</div>${ngChoices()}`;
+    of.querySelectorAll('[data-cat]').forEach((b) => b.onclick = () => { last.score.cat = b.dataset.cat; store.set('ngLast', last); renderNogo(); });
+    of.querySelectorAll('[data-pick]').forEach((b) => b.onclick = () => {
+      const log = store.get('ngLog', []); log.unshift({ name: last.name, at: Date.now(), total: s.total, won: s.won, cat: s.cat, ab: ngUi.ab, pick: b.dataset.pick });
+      store.set('ngLog', log.slice(0, 20)); toast(b.dataset.pick === '닫기' ? '닫았어요' : '기록에 남겼어요'); of.hidden = true; renderNogo();
+    });
+  }
+  // 시연 설정
+  const segNg = (id, items, key) => { $(id).innerHTML = items.map(([v, l]) => `<button data-v="${v}" class="${String(ngUi[key]) === String(v) ? 'on' : ''}">${l}</button>`).join('');
+    $(id).onclick = (e) => { const v = e.target.closest('[data-v]')?.dataset.v; if (v == null) return; ngUi[key] = isNaN(+v) || v === '' ? v : +v; store.set('ngUi', ngUi); renderNogo(); }; };
+  segNg('ngExtraSeg', [[0, '예상대로'], [10, '+10분'], [25, '+25분']], 'extra');
+  segNg('ngStartSeg', [['now', '지금 출발'], [15, '15시'], [17, '17시'], [21, '21시']], 'start');
+  segNg('ngWxSeg', [['auto', '날씨: 차 신호'], ['맑음', '맑음'], ['비', '비'], ['눈', '눈']], 'wx');
+  segNg('ngAbSeg', [['A', '방식 A 돈'], ['B', '방식 B 빼 주기'], ['auto', '인원: 착석'], [4, '4명']], 'ab');
+  // 인원 버튼은 같은 줄에 두되 people 키로 저장
+  $('ngAbSeg').querySelectorAll('[data-v="auto"],[data-v="4"]').forEach((b) => { b.classList.toggle('on', String(ngUi.people) === b.dataset.v);
+    b.onclick = (e) => { e.stopPropagation(); ngUi.people = b.dataset.v === 'auto' ? 'auto' : 4; store.set('ngUi', ngUi); const l = store.get('ngLast', null); if (l) { l.people = ngPeople(); store.set('ngLast', l); } renderNogo(); }; });
+  const log = store.get('ngLog', []);
+  $('ngLogSum').textContent = `노고 기록 ${log.length}건`;
+  $('ngLog').innerHTML = log.length ? log.slice(0, 6).map((x) => `<div class="rec"><div><b>${x.name}</b> <span class="muted">${new Date(x.at).toLocaleDateString('ko-KR')}</span><br>
+    <span class="muted">노고 ${x.total}점 · ${x.ab === 'A' ? `약 ${wonK(x.won)}` : x.cat} · ${x.pick}</span></div></div>`).join('') : '<div class="muted small">선택은 이 차 안에만 남아요.</div>';
+}
+function ngChoices() { return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="filled" data-pick="받아들이기">받아들이기</button><button data-pick="다른 선택">다른 선택</button><button class="ghost" data-pick="닫기">닫기</button></div>`; }
+$('ngCheck').addEventListener('click', ngCheck);
+$('ngGo').addEventListener('click', ngGo);
+$('ngDest').addEventListener('change', () => renderNogo());
+
 // ── 설정 ──
 $('sCar').innerHTML = CARS.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
 const SET = { sCar: 'car', sMode: 'mode', sMockFuel: 'mockFuel', sGas: 'gas', sHome: 'home', sFast: 'fast', sSource: 'source', sMargin: 'margin', sCount: 'count', sCommute: 'commute', sPeople: 'people' };
@@ -1006,7 +1294,7 @@ function renderAll() {
   requestAnimationFrame(() => {
     renderQueued = false;
     const t = store.get('tab', 'home');
-    if (t === 'home') renderHome(); else if (t === 'find') renderFind(); else if (t === 'log') renderLog(); else if (t === 'v12') render12();
+    if (t === 'home') renderHome(); else if (t === 'find') renderFind(); else if (t === 'log') renderLog(); else if (t === 'v12') render12(); else if (t === 'nogo') renderNogo();
     $('cGear').textContent = live.gear ? String(live.gear).replace('GEAR_', '') : '—';
     $('cPeople').textContent = `${people()}명`;
     $('cLoc').textContent = live.locFromNavi ? '내비' : '고정';
@@ -1024,7 +1312,10 @@ window.onChagok = (m) => {
     sig[m.key] = JSON.stringify(v);
     if (SEAT_KEYS.includes(m.key)) live.seats[m.key] = v === true;
     // v1.2: 기어 P에서 운전석 문이 열리면 도착 (에뮬 PT 6단계)
-    else if (m.key === 'door.ROW_1_LEFT') { if (v > 0 && live.gear === 'GEAR_PARK' && store.get('trip', null)?.v === 12) finish12(); }
+    else if (m.key === 'door.ROW_1_LEFT') {
+      if (v > 0 && live.gear === 'GEAR_PARK' && store.get('trip', null)?.v === 12) finish12();
+      if (v > 0 && live.gear === 'GEAR_PARK' && store.get('ngTrip', null)) ngFinish(null); // 노고 정산 도착
+    }
     else if (m.key === 'uxRestricted') live.ux = v === true;
     else if (m.key === 'evCharging') { if (v != null) watchCharging(v); }
     else if (m.key in live) live[m.key] = v;
@@ -1033,6 +1324,10 @@ window.onChagok = (m) => {
     renderAll();
   } else if (m.type === 'navi') {
     const d = m.data;
+    if (['tripInfo', 'routeStarted', 'routeState', 'destinationArrived'].includes(m.event) && d) {
+      ngOnEvent(m.event, d);
+      if (m.event === 'destinationArrived' && store.get('ngLast', null)?.at > Date.now() - 2000) return; // 노고 여행이 처리함
+    }
     if (m.event === 'currentLocation' && d?.latitude) {
       live.origin = { lat: d.latitude, lng: d.longitude, name: d.address?.split(' ').slice(-2).join(' ') || '현재 위치' };
       // 위치를 처음 받으면 모든 후보의 내비 미리보기를 차례로 받는다
@@ -1060,7 +1355,7 @@ if (!cc) {
   setTimeout(() => { if (!live.locFromNavi) queueTrips(PLACES.map((p) => p.name)); }, 5000); // 내비 위치가 안 오면 기본 위치로
   // 화면이 보일 때만 읽는다 (가이드: 백그라운드에서는 폴링·타이머를 멈춘다). 다시 보이면 = 앱을 다시 연 것 → 정산 확인
   let timers = [];
-  const startPolling = () => { timers = [setInterval(() => cc.readAll(), 2000), setInterval(() => { if (store.get('trip', null) || !live.locFromNavi) cc.readNavi(); }, 10000)]; };
+  const startPolling = () => { timers = [setInterval(() => cc.readAll(), 2000), setInterval(() => { if (store.get('trip', null) || (store.get('ngTrip', null) && !store.get('ngTrip', null).status) || !live.locFromNavi) cc.readNavi(); }, 10000)]; };
   startPolling();
   document.addEventListener('visibilitychange', () => {
     timers.forEach(clearInterval); timers = [];

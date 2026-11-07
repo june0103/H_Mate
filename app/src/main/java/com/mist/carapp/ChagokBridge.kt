@@ -24,6 +24,8 @@ import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener
 import ai.pleos.playground.vehicle.Vehicle
 import ai.pleos.playground.vehicle.api.model.area.DoorArea
 import ai.pleos.playground.vehicle.api.model.area.SeatArea
+import ai.pleos.playground.vehicle.api.model.area.WindowArea
+import ai.pleos.playground.vehicle.constant.area.WindowValue
 import ai.pleos.playground.vehicle.constant.area.DoorValue
 import ai.pleos.playground.vehicle.constant.area.SeatValue
 import android.car.Car
@@ -125,6 +127,15 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
         prop("fuelType", VehiclePropertyIds.INFO_FUEL_TYPE)
         prop("carMake", VehiclePropertyIds.INFO_MAKE)
 
+        // 노고 정산 탭: 날씨(와이퍼·안개등·외기온)·밤길(전조등·야간 모드)·주행 시간
+        val front = WindowArea(WindowValue.FRONT_WINDSHIELD)
+        vehicle.getWiper().getCurrentWiperState(front, { v -> value("wiper", v?.name) }, { e -> fail("wiper", e) })
+        vehicle.getWiper().getCurrentWiperSwitch(front, { v -> value("wiperSwitch", v?.name) }, { e -> fail("wiperSwitch", e) })
+        vehicle.getLight().getCurrentLowBeamLightState({ v -> value("lowBeam", v?.name) }, { e -> fail("lowBeam", e) })
+        vehicle.getLight().getCurrentFrontFogLightState({ v -> value("fogLight", v?.name) }, { e -> fail("fogLight", e) })
+        prop("outsideTemp", VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE)
+        prop("nightMode", VehiclePropertyIds.NIGHT_MODE)
+
         vehicle.getDrivingMode().getCurrentDrivingModeState({ v -> value("drivingMode", v?.name) }, { e -> fail("drivingMode", e) })
         vehicle.getGear().getCurrentGearSelectionState({ v -> value("gear", v?.name) }, { e -> fail("gear", e) })
         vehicle.getBrake().getCurrentBrakePedalStatus({ v -> value("brake", v) }, { e -> fail("brake", e) })
@@ -221,8 +232,14 @@ class ChagokBridge(context: Context, private val onResult: (JSONObject) -> Unit)
         }
     }
 
-    private fun <T> naviEvent(event: String, serializer: KSerializer<T>, data: T) =
-        emit(JSONObject().put("type", "navi").put("event", event).put("data", JSONObject(json.encodeToString(serializer, data))))
+    private fun <T> naviEvent(event: String, serializer: KSerializer<T>, data: T) {
+        val text = json.encodeToString(serializer, data)
+        // 노고 정산 실측 근거: 교통·ETA가 담긴 이벤트는 logcat(태그 ChagokBridge)에 남긴다
+        if (event in setOf("tripInfo", "routeStarted", "routeState", "destinationArrived")) {
+            text.chunked(3000).forEachIndexed { i, part -> Log.i(TAG, "navi $event[$i] $part") }
+        }
+        emit(JSONObject().put("type", "navi").put("event", event).put("data", JSONObject(text)))
+    }
 
     private fun naviEvent(event: String, data: Any? = null) =
         emit(JSONObject().put("type", "navi").put("event", event).put("data", data ?: JSONObject.NULL))
