@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "CarApp"
 include(":app")
+include(":sdkcheck")  // Pleos 문서 검증용 모듈 (docs/pleos 대조)

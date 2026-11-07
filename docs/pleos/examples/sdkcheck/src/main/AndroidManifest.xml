@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.type.automotive" android:required="true" />
+
+    <!-- 각 SDK의 Declaring permission 페이지에 적힌 권한 -->
+    <uses-permission android:name="pleos.car.permission.CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CONTROL_CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CAR_INFO" />
+    <!-- 문서에 없는 API(기어·EV·주행가능거리·타이어) 확인용 -->
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+    <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />
+    <uses-permission android:name="pleos.car.permission.CAR_SAFETY" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
+    <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
+    <uses-permission android:name="pleos.car.permission.STT_SERVICE" />
+    <uses-permission android:name="pleos.car.permission.FUSED_LOCATION" />
+
+    <application android:label="Pleos SDK Check">
+        <activity
+            android:name=".SdkCheckActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
